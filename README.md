@@ -1,16 +1,70 @@
-# React + Vite
+# Athena Clone
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Athena Clone is a desktop Electron application for a proctored quiz or test flow. The current screen prepares a user before a test by requesting camera access and fullscreen permission. The **Go To Test** action becomes available after both permissions are granted.
 
-Currently, two official plugins are available:
+When the test starts, the Electron main process starts an elapsed timer and sends timer updates to the React renderer through a secure preload bridge. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Current Features
 
-## React Compiler
+- Electron desktop window with a React renderer
+- Camera permission request and live camera preview
+- Fullscreen permission flow
+- Permission-gated **Go To Test** button
+- Elapsed timer controlled by the Electron main process
+- Vite development server with hot reload
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Structure
 
-## Expanding the ESLint configuration
+```text
+app/
+	app.js       Electron main process
+	preload.js   Secure IPC bridge exposed as window.athena
+src/
+	App.jsx      Test preparation screen
+	App.css      Component styles
+	index.css    Global styles
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Requirements
+
+- Node.js 22 or newer
+- npm
+- Camera permission for the test preparation flow
+
+## Setup
+
+```bash
+npm install
+```
+
+If the default npm registry times out, use:
+
+```bash
+npm install --registry=https://registry.npmjs.org/
+```
+
+## Run The Electron App
+
+The Electron window loads the Vite server, so start both processes in separate terminal windows.
+
+Terminal 1:
+
+```bash
+npm run dev
+```
+
+Terminal 2:
+
+```bash
+npm run electron
+```
+
+## Other Commands
+
+```bash
+npm run build   # Create a production Vite build
+npm run lint    # Run ESLint
+npm run preview # Preview the Vite build in a browser
+```
+
+The React page expects `window.athena`, which is provided by Electron's preload script. Use the Electron command for the complete application; opening the Vite page directly in a browser will not provide the timer IPC bridge.
