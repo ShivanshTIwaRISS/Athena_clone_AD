@@ -7,7 +7,8 @@ function App() {
   const [fullScreen, setFullScreen] = useState(false);
   const videoRef = useRef(null);
 
-  const [timer, setTimer] = useState('');
+  const [timer, setTimer] = useState(null);
+  const [testStarted, setTestStarted] = useState(false);
 
   useEffect(() => {
     const removeListener = window.athena.registerListenerForTimerTickFromMain(setTimer);
@@ -27,16 +28,16 @@ function App() {
         videoRef.current.srcObject = videoData
       }
       setCameraEnabled(true);
-    } catch (error) {
+    } catch {
       alert('Cannot access Camera');
     }
   }
 
   async function enableFullScreen() {
     try {
-      const response = await document.documentElement.requestFullscreen();
+      await document.documentElement.requestFullscreen();
       setFullScreen(true);
-    } catch (error) {
+    } catch {
       alert('Cannot access full screen');
     }
   }
@@ -96,20 +97,26 @@ function App() {
           className="btn btn-primary"
           disabled={!cameraEnabled || !fullScreen}
           onClick={async () => {
-            try {
-              const response = await window.athena.startTimerOnMain();
-            } catch (error) {
-
-            }
+            await window.athena.startTimerOnMain();
+            setTestStarted(true);
           }}
         >
-          Go To Test
+          Start Test
+        </button>
+        <button
+          className="btn btn-danger"
+          onClick={() => window.athena.quitApp()}
+        >
+          Quit App
         </button>
       </div>
 
-      <div>
-        {timer + ' (s) elapsed'}
-      </div>
+      {testStarted && timer !== null && (
+        <div className="timer-display" aria-live="polite">
+          <span>Time remaining</span>
+          <strong>{`${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}`}</strong>
+        </div>
+      )}
     </div>
   );
 }

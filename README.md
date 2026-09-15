@@ -1,16 +1,18 @@
 # Athena Clone
 
-Athena Clone is a desktop Electron application for a proctored quiz or test flow. The current screen prepares a user before a test by requesting camera access and fullscreen permission. The **Go To Test** action becomes available after both permissions are granted.
+Athena Clone is a desktop Electron application for a proctored quiz or test flow. The current screen prepares a user before a test by requesting camera access and fullscreen permission. The **Start Test** action becomes available after both permissions are granted.
 
-When the test starts, the Electron main process starts an elapsed timer and sends timer updates to the React renderer through a secure preload bridge. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
+When the test starts, the Electron main process starts a one-minute countdown and sends remaining-time updates to the React renderer through a secure preload bridge. The app automatically closes when the countdown reaches zero. The user can also close it with the **Quit App** button. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
 
 ## Current Features
 
 - Electron desktop window with a React renderer
 - Camera permission request and live camera preview
 - Fullscreen permission flow
-- Permission-gated **Go To Test** button
-- Elapsed timer controlled by the Electron main process
+- Permission-gated **Start Test** button
+- One-minute remaining timer controlled by the Electron main process
+- Automatic app shutdown when the timer expires
+- Manual **Quit App** action
 - Vite development server with hot reload
 
 ## Project Structure

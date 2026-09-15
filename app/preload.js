@@ -1,3 +1,4 @@
+/* global require */
 // preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
@@ -13,11 +14,6 @@ contextBridge.exposeInMainWorld("athena", {
             ipcRenderer.removeListener('timer', fn);
         }
     },
-    startTimerOnMain: () => {
-        try {
-            return ipcRenderer.invoke('start-timer');
-        } catch (error) {
-            throw "error";
-        }
-    }
+    startTimerOnMain: () => ipcRenderer.invoke('start-timer'),
+    quitApp: () => ipcRenderer.invoke('quit-app')
 })

@@ -140,6 +140,7 @@ body {
 /* Bottom Action Buttons */
 .bottom-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -150,6 +151,37 @@ body {
 
 .btn-primary:not(:disabled) {
   background-color: #2563eb;
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.timer-display span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.timer-display strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
 }
 
 .btn-outline {
