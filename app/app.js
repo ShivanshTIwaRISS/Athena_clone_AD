@@ -3,7 +3,7 @@ import path from "path";
 
 let window = null;
 let timerInterval = null;
-const TEST_DURATION_SECONDS = 60;
+const TEST_DURATION_SECONDS = 10;
 
 function createWindow() {
     window = new BrowserWindow({

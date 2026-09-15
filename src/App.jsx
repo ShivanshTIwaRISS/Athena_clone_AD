@@ -112,7 +112,7 @@ function App() {
       </div>
 
       {testStarted && timer !== null && (
-        <div className="timer-display" aria-live="polite">
+        <div aria-live="polite">
           <span>Time remaining</span>
           <strong>{`${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}`}</strong>
         </div>
