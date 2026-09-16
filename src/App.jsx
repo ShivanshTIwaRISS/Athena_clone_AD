@@ -3,27 +3,55 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 function App() {
+  // state variables
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const [timer, setTimer] = useState('');
+
+  // ref variables
   const videoRef = useRef(null);
 
-  const [timer, setTimer] = useState(null);
-  const [testStarted, setTestStarted] = useState(false);
 
   useEffect(() => {
-    const removeListener = window.athena.registerListenerForTimerTickFromMain(setTimer);
-    return removeListener;
+    // Register Listener for handling Timer Tick from Main
+    const removeTimerTickListener = window.athena.registerListenerForTimerTickFromMain(setTimer);
+
+    // Register Listener for handling Camera Snap Request from Main
+    const removeCameraSnapListener = window.athena.registerListenerForCameraSnapFromMain(saveVideoScreenShots);
+
+    return () => {
+      removeTimerTickListener()
+      removeCameraSnapListener()
+    };
   }, []);
 
+  async function saveVideoScreenShots() {
+    if (!videoRef.current || !videoRef.current.srcObject) {
+      return;
+    }
+
+    try {
+      const track = videoRef.current.srcObject.getVideoTracks()[0];
+      if (!track) return;
+
+      // Use ImageCapture API
+      const imageCapture = new ImageCapture(track);
+      const blob = await imageCapture.takePhoto();
+      const arrayBuffer = await blob.arrayBuffer();
+
+      // Send raw binary buffer to main process
+      window.athena.storeCameraSnapImageOnDisk(arrayBuffer);
+    } catch (error) {
+      console.error("Failed to capture image via ImageCapture:", error);
+    }
+  }
+
   async function getCameraAccess() {
-    // get the camera access using browser feature called navigator, returns media stream that contains the stream of video and audio data, if provided else will navigate to the catch block
     try {
       const videoData = await navigator.mediaDevices.getUserMedia({
         video: true
       });
 
-
-      // make
       if (videoRef.current) {
         videoRef.current.srcObject = videoData
       }
@@ -97,29 +125,44 @@ function App() {
           className="btn btn-primary"
           disabled={!cameraEnabled || !fullScreen}
           onClick={async () => {
-            await window.athena.startTimerOnMain();
-            setTestStarted(true);
+            try {
+              await window.athena.startTimerOnMain();
+            } catch (error) {
+              console.error('Failed to start timer:', error);
+            }
           }}
         >
-          Start Test
-        </button>
-        <button
-          className="btn btn-danger"
-          onClick={() => window.athena.quitApp()}
-        >
-          Quit App
+          Go To Test
         </button>
       </div>
 
-      {testStarted && timer !== null && (
-        <div aria-live="polite">
-          <span>Time remaining</span>
-          <strong>{`${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}`}</strong>
-        </div>
-      )}
+      <div>
+        {timer + ' (s) elapsed'}
+      </div>
+
+      <div>
+        <button onClick={() => {
+          saveVideoScreenShots()
+        }}>
+          saveVideoScreenShots
+        </button>
+      </div>
+
+
+      <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+        <button onClick={() => {
+          window.athena.showRules()
+        }}>
+          Show Native Rules
+        </button>
+
+        <button onClick={() => { alert("Rules ...") }}>
+          Show Chromium Rules
+        </button>
+      </div>
+
     </div>
   );
 }
 
 export default App
-

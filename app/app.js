@@ -1,12 +1,13 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { Buffer } from "node:buffer";
 import path from "path";
+import fs from "fs";
 
-let window = null;
-let timerInterval = null;
-const TEST_DURATION_SECONDS = 10;
+let electronWindow = null;
+let startTimestamp = null
 
 function createWindow() {
-    window = new BrowserWindow({
+    electronWindow = new BrowserWindow({
         height: 1000,
         width: 1000,
         webPreferences: {
@@ -15,31 +16,45 @@ function createWindow() {
         }
     })
 
-    window.loadURL('http://localhost:5173')
+    electronWindow.loadURL('http://localhost:5173')
 }
 
 ipcMain.handle('start-timer', () => {
-    if (timerInterval) {
-        return;
-    }
+    startTimestamp = Date.now();
 
-    const endTimestamp = Date.now() + TEST_DURATION_SECONDS * 1000;
-    window.webContents.send('timer', TEST_DURATION_SECONDS);
-
-    timerInterval = setInterval(() => {
-        const remainingSeconds = Math.max(0, Math.ceil((endTimestamp - Date.now()) / 1000));
-        window.webContents.send('timer', remainingSeconds);
-
-        if (remainingSeconds === 0) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            app.quit();
-        }
+    // Send Timer Tick every 1s
+    setInterval(() => {
+        electronWindow.webContents.send('timer', (Date.now() - startTimestamp) / 1000);
     }, 1000);
+
+    // Capture user's camera snap every 5s
+    setInterval(() => {
+        electronWindow.webContents.send('camera-shot')
+    }, 5000);
 })
 
-ipcMain.handle('quit-app', () => {
-    app.quit();
+
+ipcMain.handle('store-camera-snap-image-on-disk', (_event, data) => {
+    const snapshotDirectory = path.join(import.meta.dirname, "user-camera-snap");
+    fs.mkdirSync(snapshotDirectory, { recursive: true });
+    const filePath = path.join(snapshotDirectory, `${Date.now()}.jpg`);
+    fs.writeFileSync(filePath, Buffer.from(data));
+})
+
+
+ipcMain.on("show-rules", () => {
+    dialog.showMessageBox(electronWindow, {
+        type: "info",
+        title: "Athena Exam Rules",
+        message: "Exam Rules",
+        detail:
+            "1. Stay on the exam screen.\n" +
+            "2. Camera must remain enabled.\n" +
+            "3. Do not leave the exam.\n" +
+            "4. Do not use external assistance.\n" +
+            "5. Click Exit Exam when finished."
+    });
 });
+
 
 app.whenReady().then(createWindow);

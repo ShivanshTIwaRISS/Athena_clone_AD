@@ -2,7 +2,17 @@
 
 Athena Clone is a desktop Electron application for a proctored quiz or test flow. The current screen prepares a user before a test by requesting camera access and fullscreen permission. The **Start Test** action becomes available after both permissions are granted.
 
-When the test starts, the Electron main process starts a ten-second countdown and sends remaining-time updates to the React renderer through a secure preload bridge. The app automatically closes when the countdown reaches zero. The user can also close it with the **Quit App** button. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
+When the test starts, the Electron main process sends elapsed-time updates to the React renderer through a secure preload bridge. It also requests a camera snapshot every five seconds. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
+
+## Today's Lab Work
+
+- Added preload IPC listeners for timer ticks and periodic camera-shot requests
+- Captured camera frames with the browser `ImageCapture` API
+- Sent captured image data to Electron and saved JPG snapshots in `app/user-camera-snap`
+- Created the snapshot directory automatically before writing files
+- Added native Electron contest rules in a message dialog
+- Added a browser alert for comparing native and Chromium rule dialogs
+- Changed the timer display from a countdown to elapsed seconds
 
 ## Current Features
 
@@ -10,9 +20,10 @@ When the test starts, the Electron main process starts a ten-second countdown an
 - Camera permission request and live camera preview
 - Fullscreen permission flow
 - Permission-gated **Start Test** button
-- Ten-second remaining timer controlled by the Electron main process
-- Automatic app shutdown when the timer expires
-- Manual **Quit App** action
+- Elapsed timer controlled by the Electron main process
+- Automatic camera snapshots every five seconds while the test is running
+- Camera snapshots saved locally as JPG files
+- Native Electron contest-rules dialog
 - Vite development server with hot reload
 
 ## Project Structure
