@@ -12,7 +12,7 @@ When the test starts, the Electron main process sends elapsed-time updates to th
 - Created the snapshot directory automatically before writing files
 - Added native Electron contest rules in a message dialog
 - Added a browser alert for comparing native and Chromium rule dialogs
-- Changed the timer display from a countdown to elapsed seconds
+- Changed the timer display from a countdown to elapsed seconds.
 
 ## Current Features
 
