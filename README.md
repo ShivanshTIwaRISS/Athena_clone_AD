@@ -14,6 +14,40 @@ When the test starts, the Electron main process sends elapsed-time updates to th
 - Added a browser alert for comparing native and Chromium rule dialogs
 - Changed the timer display from a countdown to elapsed seconds.
 
+## Backend Lab Work - 2026-09-21
+
+- Added an Express backend in `backend/` for the exam flow
+- Added `cors` middleware so the Electron/React client can call the API
+- Added JSON request parsing with Express
+- Added `questions.json` as the question source and `sessions.json` for local session persistence
+- Added session creation, question delivery, answer checking, progress tracking, and exam submission
+- Kept `correctAnswer` out of question responses so answers are checked only by the backend
+- Installed backend dependencies with `npm install` and verified the server runs on port `3000`
+
+### Backend Setup
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+The backend starts at `http://localhost:3000`.
+
+### Backend API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/` | Check that the backend is running |
+| `POST` | `/exam/start` | Create a session using `userId` and `name`; returns `sessionId` |
+| `GET` | `/exam/mcq` | Return all questions without `correctAnswer` |
+| `GET` | `/exam/mcq/:id` | Return one question without `correctAnswer` |
+| `POST` | `/exam/answer` | Check and save an answer using `sessionId`, `questionId`, and `selectedAnswer` |
+| `GET` | `/exam/session/:sessionId` | Return the current session progress and answer history |
+| `POST` | `/exam/submit` | Mark a session as submitted and return attempted, correct, and wrong totals |
+
+Answer indexes are zero-based: `0` is the first option, `1` is the second option, and so on. The backend prevents duplicate answers and rejects answers after a session has been submitted.
+
 ## Current Features
 
 - Electron desktop window with a React renderer
