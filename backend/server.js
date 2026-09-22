@@ -127,26 +127,36 @@ app.post("/exam/answer", (req, res) => {
     return res.status(400).json({ message: "Exam is already submitted" });
   }
 
-  const alreadyAnswered = session.answers.find(
+  const existingAnswerIndex = session.answers.findIndex(
     (answer) => answer.questionId === Number(questionId)
   );
 
-  if (alreadyAnswered) {
-    return res.status(400).json({
-      message: "Question already answered",
-    });
-  }
-
   const isCorrect = Number(selectedAnswer) === question.correctAnswer;
 
-  session.answers.push({
-    questionId: question.id,
-    selectedAnswer: Number(selectedAnswer),
-    isCorrect,
-    answeredAt: new Date().toISOString(),
-  });
+  if (existingAnswerIndex !== -1) {
+    // If updating previous answer, adjust correct/wrong counts
+    const prevAnswer = session.answers[existingAnswerIndex];
+    if (prevAnswer.isCorrect) {
+      session.correct = Math.max(0, session.correct - 1);
+    } else {
+      session.wrong = Math.max(0, session.wrong - 1);
+    }
 
-  session.attempted += 1;
+    session.answers[existingAnswerIndex] = {
+      questionId: question.id,
+      selectedAnswer: Number(selectedAnswer),
+      isCorrect,
+      answeredAt: new Date().toISOString(),
+    };
+  } else {
+    session.answers.push({
+      questionId: question.id,
+      selectedAnswer: Number(selectedAnswer),
+      isCorrect,
+      answeredAt: new Date().toISOString(),
+    });
+    session.attempted += 1;
+  }
 
   if (isCorrect) {
     session.correct += 1;
@@ -157,7 +167,7 @@ app.post("/exam/answer", (req, res) => {
   saveSessions(sessions);
 
   res.json({
-    message: "Answer saved",
+    message: existingAnswerIndex !== -1 ? "Answer updated" : "Answer saved",
     isCorrect,
     attempted: session.attempted,
     correct: session.correct,

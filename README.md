@@ -1,117 +1,142 @@
 # Athena Clone
 
-Athena Clone is a desktop Electron application for a proctored quiz or test flow. The current screen prepares a user before a test by requesting camera access and fullscreen permission. The **Start Test** action becomes available after both permissions are granted.
+Athena Clone is a proctored online examination and assessment desktop application built with **Electron**, **React**, and **Express**. It integrates real-time webcam proctoring, fullscreen security enforcement, automated snapshot captures, and a full-featured MCQ examination lifecycle powered by an Express REST API.
 
-When the test starts, the Electron main process sends elapsed-time updates to the React renderer through a secure preload bridge. It also requests a camera snapshot every five seconds. The current version is a foundation for the wider quiz and contest experience; it does not yet include quiz questions, answer submission, or result tracking.
+---
 
-## Today's Lab Work
+## Today's Lab Work - 2026-09-22
 
-- Added preload IPC listeners for timer ticks and periodic camera-shot requests
-- Captured camera frames with the browser `ImageCapture` API
-- Sent captured image data to Electron and saved JPG snapshots in `app/user-camera-snap`
-- Created the snapshot directory automatically before writing files
-- Added native Electron contest rules in a message dialog
-- Added a browser alert for comparing native and Chromium rule dialogs
-- Changed the timer display from a countdown to elapsed seconds.
+### Complete Frontend & Backend Integration
+- **All 7 Backend Endpoints Fully Integrated**: Connected the React frontend with the Express backend (`http://localhost:3000`) without omitting any endpoint.
+- **Created Unified API Service Layer (`src/services/api.js`)**: Encapsulated all HTTP requests (`fetch` API) with structured error handling, payload formatting, and connectivity diagnostics.
+- **Pre-Exam Candidate Onboarding (`src/components/PreExamSetup.jsx`)**:
+  - Added candidate verification inputs for Student ID (`userId`) and Full Name (`name`).
+  - Integrated `GET /` connectivity check badge with automatic health polling and manual retry button.
+  - Required camera hardware verification and fullscreen enablement before enabling the **Start Examination** CTA.
+  - Linked native Electron rules dialog (`window.athena.showRules()`) and an in-app interactive modal.
+- **Interactive Examination Arena (`src/components/ExamArena.jsx`)**:
+  - **Auto-Save on Selection**: Selecting any option automatically persists candidate's choice in state across all question switches and immediately syncs with `POST /exam/answer`.
+  - **Final Submission Auto-Flush**: When clicking *Submit Exam*, all selected/drafted options are automatically validated and submitted to the backend before calling `POST /exam/submit`.
+  - **Question Navigation Palette (`GET /exam/mcq`)**: Displays all assessment questions with status tags (Current, Answered / Auto-saved, Unanswered) and quick filter tabs.
+  - **Dynamic Question Loader (`GET /exam/mcq/:id`)**: Fetches specific question data on demand when switching questions or clicking palette chips.
+  - **Single-Attempt Answer Submission (`POST /exam/answer`)**: Submits chosen MCQ option to backend, locks answered questions per backend rules, and provides instant confirmation.
+  - **Live Session Progress Telemetry (`GET /exam/session/:sessionId`)**: Synchronizes live score, attempted count, remaining questions, and answered records with a dedicated "Sync Progress" trigger.
+  - **Final Submission Confirmation Modal (`POST /exam/submit`)**: Displays auto-saved question counts, warns user about unanswered questions, completes the exam session, and transitions to results.
+- **Comprehensive Scorecard & Result Review (`src/components/ExamResults.jsx`)**:
+  - Displays summary metrics: Total Questions, Attempted, Correct, Wrong, and Accuracy Percentage.
+  - Full Question-by-Question Response Audit fetched from `GET /exam/session/:sessionId` with submitted choices and timestamps.
+  - Provides a **Start Another Examination** workflow to reset and take new tests cleanly.
 
-## Backend Lab Work - 2026-09-21
+---
 
-- Added an Express backend in `backend/` for the exam flow
-- Added `cors` middleware so the Electron/React client can call the API
-- Added JSON request parsing with Express
-- Added `questions.json` as the question source and `sessions.json` for local session persistence
-- Added session creation, question delivery, answer checking, progress tracking, and exam submission
-- Kept `correctAnswer` out of question responses so answers are checked only by the backend
-- Installed backend dependencies with `npm install` and verified the server runs on port `3000`
+## Backend API Endpoints & Frontend Integration Map
 
-### Backend Setup
+| # | HTTP Method | Endpoint | Backend Purpose | Frontend Component & Usecase |
+|---|---|---|---|---|
+| **1** | `GET` | `/` | Health check | `Header.jsx`, `PreExamSetup.jsx`: Live server connection status badge and retry trigger. |
+| **2** | `POST` | `/exam/start` | Starts new session | `PreExamSetup.jsx`: Initializes exam session with `userId` and `name`, returns `sessionId`. |
+| **3** | `GET` | `/exam/mcq` | Returns all questions | `App.jsx`, `ExamArena.jsx`: Populates question palette navigation, progress tracker, and filters. |
+| **4** | `GET` | `/exam/mcq/:id` | Returns single question | `ExamArena.jsx`: Fetches question prompt and option choices dynamically when navigated to. |
+| **5** | `POST` | `/exam/answer` | Validates & saves answer | `ExamArena.jsx`: Submits option index (`selectedAnswer`), receives server validation and updates stats. |
+| **6** | `GET` | `/exam/session/:sessionId` | Returns session progress | `ExamArena.jsx`, `ExamResults.jsx`: Live session sync button, answered status tracking, and final scorecard audit. |
+| **7** | `POST` | `/exam/submit` | Submits exam | `ExamArena.jsx`: Marks session as submitted, locks test, and returns final attempted/correct/wrong totals. |
 
-```bash
-cd backend
-npm install
-npm start
-```
+---
 
-The backend starts at `http://localhost:3000`.
+## Previous Lab Work
 
-### Backend API
+### Backend Lab Work - 2026-09-21
+- Added Express backend in `backend/` on port `3000` with `cors` and JSON middleware.
+- Built JSON persistence using `backend/data/questions.json` and `backend/data/sessions.json`.
+- Implemented secure answer verification where `correctAnswer` is kept strictly on server.
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/` | Check that the backend is running |
-| `POST` | `/exam/start` | Create a session using `userId` and `name`; returns `sessionId` |
-| `GET` | `/exam/mcq` | Return all questions without `correctAnswer` |
-| `GET` | `/exam/mcq/:id` | Return one question without `correctAnswer` |
-| `POST` | `/exam/answer` | Check and save an answer using `sessionId`, `questionId`, and `selectedAnswer` |
-| `GET` | `/exam/session/:sessionId` | Return the current session progress and answer history |
-| `POST` | `/exam/submit` | Mark a session as submitted and return attempted, correct, and wrong totals |
+### Proctoring Foundation Lab Work - 2026-09-20
+- Added Electron IPC listeners for main-process timer ticks and periodic camera snapshot events.
+- Used browser `ImageCapture` API to take camera snapshots every 5 seconds.
+- Implemented `storeCameraSnapImageOnDisk` to save JPG files in `app/user-camera-snap/`.
+- Added native Electron contest rules dialog via `dialog.showMessageBox`.
 
-Answer indexes are zero-based: `0` is the first option, `1` is the second option, and so on. The backend prevents duplicate answers and rejects answers after a session has been submitted.
-
-## Current Features
-
-- Electron desktop window with a React renderer
-- Camera permission request and live camera preview
-- Fullscreen permission flow
-- Permission-gated **Start Test** button
-- Elapsed timer controlled by the Electron main process
-- Automatic camera snapshots every five seconds while the test is running
-- Camera snapshots saved locally as JPG files
-- Native Electron contest-rules dialog
-- Vite development server with hot reload
+---
 
 ## Project Structure
 
 ```text
-app/
-	app.js       Electron main process
-	preload.js   Secure IPC bridge exposed as window.athena
-src/
-	App.jsx      Test preparation screen
-	App.css      Component styles
-	index.css    Global styles
+Athena-Clone/
+├── app/
+│   ├── app.js                 # Electron main process (Window management, IPC timers, snapshot storage)
+│   └── preload.js             # Secure contextBridge exposing window.athena API
+├── backend/
+│   ├── data/
+│   │   ├── questions.json     # Question bank (with server-side correctAnswer)
+│   │   └── sessions.json      # Exam sessions database
+│   ├── package.json           # Backend Express configuration
+│   ├── server.js              # Express REST API (7 endpoints)
+│   └── README.md              # Backend documentation
+├── src/
+│   ├── components/
+│   │   ├── ExamArena.jsx      # Active exam interface (palette, question workspace, live proctoring)
+│   │   ├── ExamResults.jsx    # Post-exam scorecard and detailed response audit breakdown
+│   │   ├── Header.jsx         # Top navbar with live timer, session badge, and API health status
+│   │   ├── PreExamSetup.jsx   # Candidate ID/Name setup, camera verification, fullscreen mode
+│   │   └── RulesModal.jsx     # Exam instructions dialog with native Electron trigger
+│   ├── services/
+│   │   └── api.js             # API client functions for all 7 backend endpoints
+│   ├── App.css                # Polished, responsive component styles
+│   ├── App.jsx                # Main application coordinator & stage state manager
+│   ├── index.css              # Global tokens and design system
+│   └── main.jsx               # React DOM entry point
+├── package.json
+└── README.md
 ```
 
-## Requirements
+---
 
-- Node.js 22 or newer
-- npm
-- Camera permission for the test preparation flow
+## Quick Start Guide
 
-## Setup
+### 1. Install Dependencies
 
+Root application:
 ```bash
 npm install
 ```
 
-If the default npm registry times out, use:
-
+Backend server:
 ```bash
-npm install --registry=https://registry.npmjs.org/
+cd backend
+npm install
+cd ..
 ```
 
-## Run The Electron App
+---
 
-The Electron window loads the Vite server, so start both processes in separate terminal windows.
+### 2. Start the Backend Server
 
-Terminal 1:
+```bash
+cd backend
+npm start
+```
+*The backend starts at `http://localhost:3000`.*
 
+---
+
+### 3. Start the Frontend & Electron Desktop App
+
+In **Terminal 1** (Vite development server):
 ```bash
 npm run dev
 ```
 
-Terminal 2:
-
+In **Terminal 2** (Electron Desktop window):
 ```bash
 npm run electron
 ```
 
-## Other Commands
+---
+
+## Build & Quality Commands
 
 ```bash
-npm run build   # Create a production Vite build
-npm run lint    # Run ESLint
-npm run preview # Preview the Vite build in a browser
+npm run lint       # Run ESLint validation
+npm run build      # Compile production Vite bundle
+npm run preview    # Preview built application
 ```
-
-The React page expects `window.athena`, which is provided by Electron's preload script. Use the Electron command for the complete application; opening the Vite page directly in a browser will not provide the timer IPC bridge.

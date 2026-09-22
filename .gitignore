@@ -4,3 +4,4 @@ dist/
 .env
 .env.*
 !.env.example
+app/user-camera-snap/
