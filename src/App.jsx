@@ -22,9 +22,11 @@ function App() {
 
   // Hardware & Proctoring states
   const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [mediaStream, setMediaStream] = useState(null);
   const [fullScreen, setFullScreen] = useState(false);
   const [timer, setTimer] = useState(0);
   const [snapshotCount, setSnapshotCount] = useState(0);
+  const [screenSnapshotCount, setScreenSnapshotCount] = useState(0);
 
   // Backend Integration states
   const [backendOnline, setBackendOnline] = useState(false);
@@ -43,6 +45,20 @@ function App() {
   // Refs
   const videoRef = useRef(null);
   const webTimerIntervalRef = useRef(null);
+  const webSnapshotIntervalRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+
+  /**
+   * Keep video element attached to mediaStream across component mounts/unmounts
+   */
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      if (videoRef.current.srcObject !== mediaStream) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  }, [stage, mediaStream]);
 
   /**
    * Check Backend Server Connectivity (GET /)
@@ -108,35 +124,76 @@ function App() {
 
   /**
    * Save Video Screenshots (Invoked by Electron main IPC or browser timer)
+   * Captures camera stream using HTML5 Canvas & ImageCapture fallback
    */
   const saveVideoScreenShots = useCallback(async () => {
-    if (!videoRef.current || !videoRef.current.srcObject) {
+    const video = videoRef.current;
+    const stream = mediaStreamRef.current || (video ? video.srcObject : null);
+
+    if (!video && !stream) {
       return;
     }
 
-    try {
-      const track = videoRef.current.srcObject.getVideoTracks()[0];
-      if (!track) return;
+    let bufferToStore = null;
 
-      if (typeof ImageCapture !== 'undefined') {
-        const imageCapture = new ImageCapture(track);
-        const blob = await imageCapture.takePhoto();
-        const arrayBuffer = await blob.arrayBuffer();
-
-        if (window.athena && typeof window.athena.storeCameraSnapImageOnDisk === 'function') {
-          window.athena.storeCameraSnapImageOnDisk(arrayBuffer);
+    // Strategy 1: Fast HTML5 Canvas Frame Capture (Works across all browsers and Electron)
+    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/jpeg', 0.85);
+          });
+          if (blob) {
+            bufferToStore = await blob.arrayBuffer();
+          }
         }
+      } catch (canvasErr) {
+        console.warn('Canvas snapshot capture failed, trying ImageCapture fallback:', canvasErr);
+      }
+    }
+
+    // Strategy 2: ImageCapture Track fallback
+    if (!bufferToStore && stream) {
+      try {
+        const track = stream.getVideoTracks()[0];
+        if (track && typeof ImageCapture !== 'undefined') {
+          const imageCapture = new ImageCapture(track);
+          const blob = await imageCapture.takePhoto();
+          bufferToStore = await blob.arrayBuffer();
+        }
+      } catch (icErr) {
+        console.warn('ImageCapture fallback failed:', icErr);
+      }
+    }
+
+    if (bufferToStore) {
+      if (window.athena && typeof window.athena.storeCameraSnapImageOnDisk === 'function') {
+        window.athena.storeCameraSnapImageOnDisk(bufferToStore);
       }
       setSnapshotCount((prev) => prev + 1);
-    } catch (error) {
-      console.error('Failed to capture video snapshot:', error);
     }
   }, []);
+
+  /**
+   * Trigger Manual Screen Snapshot
+   */
+  const captureManualSnapshot = useCallback(async () => {
+    await saveVideoScreenShots();
+    if (window.athena && typeof window.athena.captureScreenSnap === 'function') {
+      await window.athena.captureScreenSnap();
+    }
+  }, [saveVideoScreenShots]);
 
   // Register Electron IPC Listeners if running in Electron
   useEffect(() => {
     let removeTimerListener = () => {};
     let removeSnapListener = () => {};
+    let removeScreenSnapListener = () => {};
 
     if (window.athena) {
       if (typeof window.athena.registerListenerForTimerTickFromMain === 'function') {
@@ -150,13 +207,23 @@ function App() {
           saveVideoScreenShots();
         });
       }
+
+      if (typeof window.athena.registerListenerForScreenSnapFromMain === 'function') {
+        removeScreenSnapListener = window.athena.registerListenerForScreenSnapFromMain(() => {
+          setScreenSnapshotCount((prev) => prev + 1);
+        });
+      }
     }
 
     return () => {
       removeTimerListener();
       removeSnapListener();
+      removeScreenSnapListener();
       if (webTimerIntervalRef.current) {
         clearInterval(webTimerIntervalRef.current);
+      }
+      if (webSnapshotIntervalRef.current) {
+        clearInterval(webSnapshotIntervalRef.current);
       }
     };
   }, [saveVideoScreenShots]);
@@ -167,11 +234,15 @@ function App() {
   async function getCameraAccess() {
     try {
       const videoData = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
       });
+
+      mediaStreamRef.current = videoData;
+      setMediaStream(videoData);
 
       if (videoRef.current) {
         videoRef.current.srcObject = videoData;
+        videoRef.current.play().catch(() => {});
       }
       setCameraEnabled(true);
       setErrorMessage(null);
@@ -201,7 +272,7 @@ function App() {
    * Start Exam Flow
    * 1. Calls POST /exam/start to create session
    * 2. Calls GET /exam/mcq to fetch questions
-   * 3. Starts Electron timer and proctoring
+   * 3. Starts Electron timer and proctoring (camera + screen capture)
    * 4. Transitions to EXAM arena
    */
   async function handleStartExam() {
@@ -229,14 +300,26 @@ function App() {
       } else {
         // Fallback timer if running outside Electron
         let elapsed = 0;
+        if (webTimerIntervalRef.current) clearInterval(webTimerIntervalRef.current);
         webTimerIntervalRef.current = setInterval(() => {
           elapsed += 1;
           setTimer(elapsed);
         }, 1000);
+
+        // Fallback browser proctoring snapshots every 5s
+        if (webSnapshotIntervalRef.current) clearInterval(webSnapshotIntervalRef.current);
+        webSnapshotIntervalRef.current = setInterval(() => {
+          saveVideoScreenShots();
+        }, 5000);
       }
 
       // 4. Transition to Exam
       setStage('EXAM');
+
+      // Immediate first proctoring snapshot
+      setTimeout(() => {
+        saveVideoScreenShots();
+      }, 1000);
     } catch (err) {
       console.error('Failed to start exam:', err);
       setErrorMessage(err.message || 'Failed to start exam. Check backend connection.');
@@ -252,6 +335,12 @@ function App() {
     if (webTimerIntervalRef.current) {
       clearInterval(webTimerIntervalRef.current);
     }
+    if (webSnapshotIntervalRef.current) {
+      clearInterval(webSnapshotIntervalRef.current);
+    }
+    if (window.athena && typeof window.athena.stopProctoringOnMain === 'function') {
+      window.athena.stopProctoringOnMain();
+    }
     setResultData(result);
     setFinalSessionData(session);
     setStage('RESULTS');
@@ -265,6 +354,7 @@ function App() {
     setSessionId('');
     setTimer(0);
     setSnapshotCount(0);
+    setScreenSnapshotCount(0);
     setResultData(null);
     setFinalSessionData(null);
     setErrorMessage(null);
@@ -293,6 +383,7 @@ function App() {
             name={name}
             setName={setName}
             cameraEnabled={cameraEnabled}
+            mediaStream={mediaStream}
             videoRef={videoRef}
             onGetCameraAccess={getCameraAccess}
             fullScreen={fullScreen}
@@ -312,8 +403,11 @@ function App() {
             sessionId={sessionId}
             questionsList={questionsList}
             videoRef={videoRef}
+            mediaStream={mediaStream}
             timer={timer}
             snapshotCount={snapshotCount}
+            screenSnapshotCount={screenSnapshotCount}
+            onCaptureManualSnapshot={captureManualSnapshot}
             onExamSubmitted={handleExamSubmitted}
             onOpenRules={() => setRulesOpen(true)}
           />
@@ -327,6 +421,7 @@ function App() {
             questionsList={questionsList}
             timer={timer}
             snapshotCount={snapshotCount}
+            screenSnapshotCount={screenSnapshotCount}
             onRestart={handleRestart}
           />
         )}

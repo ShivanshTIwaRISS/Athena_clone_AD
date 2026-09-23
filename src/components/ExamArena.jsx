@@ -12,11 +12,24 @@ export default function ExamArena({
   sessionId,
   questionsList,
   videoRef,
+  mediaStream,
   timer,
   snapshotCount,
+  screenSnapshotCount = 0,
+  onCaptureManualSnapshot,
   onExamSubmitted,
   onOpenRules,
 }) {
+  const [snapshotFeedback, setSnapshotFeedback] = useState(false);
+
+  // Ensure webcam stream is bound to video element when arena mounts
+  useEffect(() => {
+    if (videoRef?.current && mediaStream && videoRef.current.srcObject !== mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [videoRef, mediaStream]);
+
   // Navigation & current question state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState(null);
@@ -472,13 +485,18 @@ export default function ExamArena({
         {/* Right Column: Live Proctor & Real-Time Stats */}
         <aside className="proctor-sidebar">
           {/* Live Webcam Widget */}
-          <div className="proctor-card camera-proctor-card">
+          <div className={`proctor-card camera-proctor-card ${snapshotFeedback ? 'snapshot-flash' : ''}`}>
             <div className="proctor-card-header">
               <div className="live-rec-indicator">
                 <span className="rec-dot"></span>
                 <span>LIVE PROCTORING</span>
               </div>
-              <span className="snapshot-tag">{snapshotCount} snaps</span>
+              <div className="snapshot-tags-wrap">
+                <span className="snapshot-tag" title="Webcam frames captured">📹 {snapshotCount} cam</span>
+                {screenSnapshotCount > 0 && (
+                  <span className="snapshot-tag tag-screen" title="Screen captures saved">🖥️ {screenSnapshotCount} scr</span>
+                )}
+              </div>
             </div>
 
             <div className="proctor-video-wrap">
@@ -492,8 +510,24 @@ export default function ExamArena({
             </div>
 
             <div className="proctor-feed-caption">
-              <span>Automated camera captures saved to <code>app/user-camera-snap/</code></span>
+              <span>Proctor snapshots saved to <code>app/user-camera-snap/</code> & <code>app/user-screen-snap/</code></span>
             </div>
+
+            {onCaptureManualSnapshot && (
+              <div className="proctor-actions-wrap" style={{ marginTop: '0.65rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm btn-block"
+                  onClick={async () => {
+                    setSnapshotFeedback(true);
+                    await onCaptureManualSnapshot();
+                    setTimeout(() => setSnapshotFeedback(false), 600);
+                  }}
+                >
+                  📸 Capture Snapshot Now
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Real-time Session Metrics Card */}
@@ -616,8 +650,12 @@ ExamArena.propTypes = {
   sessionId: PropTypes.string.isRequired,
   questionsList: PropTypes.array.isRequired,
   videoRef: PropTypes.shape({ current: PropTypes.any }),
+  mediaStream: PropTypes.any,
   timer: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   snapshotCount: PropTypes.number.isRequired,
+  screenSnapshotCount: PropTypes.number,
+  onCaptureManualSnapshot: PropTypes.func,
   onExamSubmitted: PropTypes.func.isRequired,
   onOpenRules: PropTypes.func.isRequired,
 };
+

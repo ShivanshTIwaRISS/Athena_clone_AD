@@ -1,4 +1,5 @@
 // src/components/PreExamSetup.jsx
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 export default function PreExamSetup({
@@ -7,6 +8,7 @@ export default function PreExamSetup({
   name,
   setName,
   cameraEnabled,
+  mediaStream,
   videoRef,
   onGetCameraAccess,
   fullScreen,
@@ -18,6 +20,13 @@ export default function PreExamSetup({
   errorMessage,
   onOpenRules,
 }) {
+  useEffect(() => {
+    if (videoRef?.current && mediaStream && videoRef.current.srcObject !== mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [videoRef, mediaStream]);
+
   const isReadyToStart = Boolean(
     userId.trim() &&
     name.trim() &&
@@ -249,6 +258,7 @@ PreExamSetup.propTypes = {
   name: PropTypes.string.isRequired,
   setName: PropTypes.func.isRequired,
   cameraEnabled: PropTypes.bool.isRequired,
+  mediaStream: PropTypes.any,
   videoRef: PropTypes.shape({ current: PropTypes.any }),
   onGetCameraAccess: PropTypes.func.isRequired,
   fullScreen: PropTypes.bool.isRequired,
