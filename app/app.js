@@ -9,12 +9,27 @@ let timerInterval = null;
 let cameraInterval = null;
 let screenInterval = null;
 
-const cameraSnapDir = path.join(import.meta.dirname, "user-camera-snap");
-const screenSnapDir = path.join(import.meta.dirname, "user-screen-snap");
+/**
+ * Returns safe writable directory for camera snapshots
+ */
+function getCameraSnapDir() {
+    const baseDir = app.isPackaged
+        ? path.join(app.getPath("userData"), "user-camera-snap")
+        : path.join(import.meta.dirname, "user-camera-snap");
+    fs.mkdirSync(baseDir, { recursive: true });
+    return baseDir;
+}
 
-// Ensure snapshot storage directories exist
-fs.mkdirSync(cameraSnapDir, { recursive: true });
-fs.mkdirSync(screenSnapDir, { recursive: true });
+/**
+ * Returns safe writable directory for screen snapshots
+ */
+function getScreenSnapDir() {
+    const baseDir = app.isPackaged
+        ? path.join(app.getPath("userData"), "user-screen-snap")
+        : path.join(import.meta.dirname, "user-screen-snap");
+    fs.mkdirSync(baseDir, { recursive: true });
+    return baseDir;
+}
 
 function createWindow() {
     electronWindow = new BrowserWindow({
@@ -35,7 +50,6 @@ function createWindow() {
     }
 }
 
-
 /**
  * Capture full electron window/screen snapshot
  */
@@ -45,6 +59,7 @@ async function captureAndSaveScreen() {
         const image = await electronWindow.webContents.capturePage();
         const buffer = image.toJPEG(85);
         const fileName = `${Date.now()}-screen.jpg`;
+        const screenSnapDir = getScreenSnapDir();
         const filePath = path.join(screenSnapDir, fileName);
         fs.writeFileSync(filePath, buffer);
         if (!electronWindow.isDestroyed()) {
@@ -104,7 +119,7 @@ ipcMain.handle('stop-proctoring', () => {
 // Store camera snapshot sent by renderer
 ipcMain.handle('store-camera-snap-image-on-disk', (_event, data) => {
     try {
-        fs.mkdirSync(cameraSnapDir, { recursive: true });
+        const cameraSnapDir = getCameraSnapDir();
         const filePath = path.join(cameraSnapDir, `${Date.now()}-cam.jpg`);
         fs.writeFileSync(filePath, Buffer.from(data));
         return { success: true, filePath };
@@ -117,7 +132,7 @@ ipcMain.handle('store-camera-snap-image-on-disk', (_event, data) => {
 // Store screen snapshot sent by renderer
 ipcMain.handle('store-screen-snap-image-on-disk', (_event, data) => {
     try {
-        fs.mkdirSync(screenSnapDir, { recursive: true });
+        const screenSnapDir = getScreenSnapDir();
         const filePath = path.join(screenSnapDir, `${Date.now()}-screen.jpg`);
         fs.writeFileSync(filePath, Buffer.from(data));
         return { success: true, filePath };
@@ -148,7 +163,12 @@ ipcMain.on("show-rules", () => {
     });
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    // Ensure writable directories are initialized
+    getCameraSnapDir();
+    getScreenSnapDir();
+    createWindow();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
