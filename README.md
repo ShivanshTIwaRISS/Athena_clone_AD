@@ -1,23 +1,24 @@
 # Athena Clone
 
-Athena Clone is a proctored online examination and assessment desktop application built with **Electron**, **React**, and **Express**. It integrates real-time webcam proctoring, fullscreen security enforcement, automated snapshot captures, and a full-featured MCQ examination lifecycle powered by an Express REST API.
+Athena Clone is a proctored online examination and assessment desktop application built with **Electron**, **React**, and **Express**. It integrates real-time webcam proctoring, automated full-screen/window screenshot captures, fullscreen security enforcement, automated timer synchronization, and a full-featured MCQ examination lifecycle powered by an Express REST API.
 
 ---
 
 ## Today's Lab Work - 2026-09-24
 
 ### Automated Proctoring Screenshot Engine & Stream Resilience Hardening
-- **Automated Multi-Source Proctoring Snapshots**:
-  - Implemented continuous webcam snapshots (every 5 seconds) saved to `app/user-camera-snap/`.
-  - Implemented high-resolution full-window/screen proctoring capture (every 10 seconds) using Electron `webContents.capturePage()`, saved automatically to `app/user-screen-snap/`.
-  - Implemented manual on-demand snapshot triggers with live visual feedback in the Exam Arena.
+- **Automated Dual-Source Proctoring Snapshots**:
+  - **Continuous Webcam Capture**: Automatically captures candidate webcam snapshots every 5 seconds and writes JPEG buffers directly to disk at `app/user-camera-snap/${timestamp}-cam.jpg`.
+  - **High-Resolution Exam Screen Capture**: Uses Electron `webContents.capturePage()` to capture full exam window screenshots every 10 seconds, stored at `app/user-screen-snap/${timestamp}-screen.jpg`.
+  - **Instant Manual Snapshot Trigger**: Added a dedicated **"📸 Capture Snapshot Now"** CTA in the exam arena sidebar for on-demand evaluator validation with pulse flash UI feedback.
 - **Resilient Multi-Environment Fallback Architecture**:
-  - Replaced brittle `ImageCapture`-only dependencies with an HTML5 `<canvas>` 2D context rendering engine fallback that guarantees zero-failure frame extraction in standard browsers and Electron.
-  - Added stream persistence across React view transitions (`SETUP` -> `EXAM` -> `RESULTS`), fixing the stream unmount issue where proctoring feeds would previously go dark upon exam entry.
-  - Added browser-mode timers and snapshot interval fallbacks so proctoring functions continuously even outside Electron.
-- **Dual Telemetry & Proctoring Metrics**:
-  - Live webcam and screen capture counters displayed in real-time in the active examination proctor sidebar (`📹 X cam`, `🖥️ Y scr`).
-  - Included proctoring capture summary on the final post-exam assessment scorecard (`ExamResults.jsx`).
+  - Engineered an offscreen HTML5 `<canvas>` 2D frame extraction pipeline that works reliably in all browsers and Electron without failing on camera lockouts.
+  - Retained `ImageCapture` track snapshot extraction as a supplementary fallback.
+  - Resolved MediaStream unmounting issue: Maintained persistent `mediaStream` state across React stage transitions (`SETUP` -> `EXAM` -> `RESULTS`), preventing the webcam feed from going blank.
+  - Implemented automatic browser timer & snapshot capture intervals when running outside Electron.
+- **Proctoring Telemetry & Final Audit**:
+  - Real-time badges for webcam frames (`📹 X cam`) and screen captures (`🖥️ Y scr`) in the active exam proctor sidebar.
+  - Post-exam scorecard breakdown displaying complete proctoring audit metrics alongside accuracy score and timestamped responses.
 
 ---
 
@@ -25,13 +26,61 @@ Athena Clone is a proctored online examination and assessment desktop applicatio
 
 ### Dual Proctoring Screenshot Architecture & Storage Pipeline
 - **Electron IPC Screen Capture Pipeline**:
-  - Engineered `capture-screen-snap` and `store-screen-snap-image-on-disk` IPC channels in `app/app.js` and `app/preload.js`.
-  - Created automatic storage directory initializers for both `app/user-camera-snap/` and `app/user-screen-snap/`.
+  - Engineered `capture-screen-snap` and `store-screen-snap-image-on-disk` IPC handlers in `app/app.js` and `app/preload.js`.
+  - Automatic recursive storage directory creation for `app/user-camera-snap/` and `app/user-screen-snap/`.
   - Configured synchronized periodic timer broadcasts for candidate timer ticks (1s), camera capture events (5s), and screen capture events (10s).
 - **Stream Lifecycle & Canvas Frame Capture Engine**:
-  - Designed `mediaStream` state coordinator in `src/App.jsx` to prevent MediaStream garbage collection during stage transitions.
+  - Designed `mediaStream` coordinator in `src/App.jsx` to prevent MediaStream garbage collection during stage transitions.
   - Built canvas blob-to-buffer conversion utility for saving candidate photos directly to local disk storage.
-  - Implemented automatic stop-proctoring cleanup upon final exam submission (`POST /exam/submit`).
+  - Implemented automatic `stop-proctoring` cleanup upon final exam submission (`POST /exam/submit`).
+
+---
+
+## Backend API Endpoints & Frontend Integration Map
+
+| # | HTTP Method | Endpoint | Backend Purpose | Frontend Component & Usecase |
+|---|---|---|---|---|
+| **1** | `GET` | `/` | Health check | `Header.jsx`, `PreExamSetup.jsx`: Live server connection status badge and retry trigger. |
+| **2** | `POST` | `/exam/start` | Starts new session | `PreExamSetup.jsx`: Initializes exam session with `userId` and `name`, returns `sessionId`. |
+| **3** | `GET` | `/exam/mcq` | Returns all questions | `App.jsx`, `ExamArena.jsx`: Populates question palette navigation, progress tracker, and filters. |
+| **4** | `GET` | `/exam/mcq/:id` | Returns single question | `ExamArena.jsx`: Fetches question prompt and option choices dynamically when navigated to. |
+| **5** | `POST` | `/exam/answer` | Validates & saves answer | `ExamArena.jsx`: Submits option index (`selectedAnswer`), receives server validation and updates stats. |
+| **6** | `GET` | `/exam/session/:sessionId` | Returns session progress | `ExamArena.jsx`, `ExamResults.jsx`: Live session sync button, answered status tracking, and final scorecard audit. |
+| **7** | `POST` | `/exam/submit` | Submits exam | `ExamArena.jsx`: Marks session as submitted, locks test, and returns final attempted/correct/wrong totals. |
+
+---
+
+## Proctoring Architecture & Storage Layout
+
+```text
+app/
+├── app.js                     # Main Electron process (IPC, Timers, Window Captures)
+├── preload.js                 # ContextBridge secure APIs (athena.captureScreenSnap, athena.storeCameraSnapImageOnDisk)
+├── user-camera-snap/          # Automatically saved webcam snapshots (*-cam.jpg)
+└── user-screen-snap/          # Automatically saved full exam window screenshots (*-screen.jpg)
+```
+
+### Proctoring Snapshot Execution Cycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Timer as Electron Main Process
+    participant Preload as Preload ContextBridge
+    participant Renderer as React Exam Arena
+    participant Disk as Local File Storage
+
+    Note over Timer,Renderer: Exam Starts (handleStartExam)
+    Timer->>Renderer: Broadcast 'timer' (every 1s)
+    Timer->>Renderer: Broadcast 'camera-shot' (every 5s)
+    Renderer->>Renderer: Extract Video Frame (HTML5 Canvas 2D)
+    Renderer->>Preload: storeCameraSnapImageOnDisk(buffer)
+    Preload->>Disk: Write to app/user-camera-snap/${timestamp}-cam.jpg
+    Timer->>Timer: capturePage() (every 10s)
+    Timer->>Disk: Write to app/user-screen-snap/${timestamp}-screen.jpg
+    Timer->>Renderer: Broadcast 'screen-snap-saved'
+    Renderer->>Renderer: Update Proctor Sidebar Counters (Cam & Scr)
+```
 
 ---
 
@@ -77,7 +126,9 @@ Athena Clone is a proctored online examination and assessment desktop applicatio
 Athena-Clone/
 ├── app/
 │   ├── app.js                 # Electron main process (Window management, IPC timers, snapshot storage)
-│   └── preload.js             # Secure contextBridge exposing window.athena API
+│   ├── preload.js             # Secure contextBridge exposing window.athena API
+│   ├── user-camera-snap/      # Automated webcam snapshot repository (*-cam.jpg)
+│   └── user-screen-snap/      # Automated exam screen snapshot repository (*-screen.jpg)
 ├── backend/
 │   ├── data/
 │   │   ├── questions.json     # Question bank (with server-side correctAnswer)
