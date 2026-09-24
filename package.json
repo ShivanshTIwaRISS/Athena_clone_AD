@@ -1,14 +1,53 @@
 {
-  "name": "athena5",
-  "private": true,
-  "version": "0.0.0",
+  "name": "athena-exam-portal",
+  "productName": "Athena Exam Portal",
+  "version": "1.0.0",
+  "description": "Proctored online examination and assessment desktop application",
+  "main": "app/app.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "electron ./app/app.js"
+    "electron": "electron ./app/app.js",
+    "dist": "vite build && electron-builder",
+    "dist:mac": "vite build && electron-builder --mac dmg --arm64",
+    "dist:mac:universal": "vite build && electron-builder --mac dmg --universal"
+  },
+  "build": {
+    "appId": "com.athena.examportal",
+    "productName": "Athena Exam Portal",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "app/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        "dmg"
+      ],
+      "identity": null
+    },
+    "dmg": {
+      "title": "Athena Exam Portal Installer",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -20,6 +59,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
@@ -27,3 +67,4 @@
     "vite": "^8.3.0"
   }
 }
+

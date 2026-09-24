@@ -20,14 +20,21 @@ function createWindow() {
     electronWindow = new BrowserWindow({
         height: 1000,
         width: 1200,
+        title: "Athena Exam Portal",
         webPreferences: {
-            devTools: true,
+            devTools: !app.isPackaged,
             preload: path.join(import.meta.dirname, 'preload.js')
         }
     });
 
-    electronWindow.loadURL('http://localhost:5173');
+    const indexPath = path.join(import.meta.dirname, '../dist/index.html');
+    if (app.isPackaged || fs.existsSync(indexPath)) {
+        electronWindow.loadFile(indexPath);
+    } else {
+        electronWindow.loadURL('http://localhost:5173');
+    }
 }
+
 
 /**
  * Capture full electron window/screen snapshot

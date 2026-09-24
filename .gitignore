@@ -1,7 +1,10 @@
 node_modules/
 dist/
+release/
 .DS_Store
 .env
 .env.*
 !.env.example
 app/user-camera-snap/
+app/user-screen-snap/
+
