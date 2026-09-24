@@ -4,9 +4,40 @@ Athena Clone is a proctored online examination and assessment desktop applicatio
 
 ---
 
-## Today's Lab Work - 2026-09-22
+## Today's Lab Work - 2026-09-24
 
-### Complete Frontend & Backend Integration
+### Automated Proctoring Screenshot Engine & Stream Resilience Hardening
+- **Automated Multi-Source Proctoring Snapshots**:
+  - Implemented continuous webcam snapshots (every 5 seconds) saved to `app/user-camera-snap/`.
+  - Implemented high-resolution full-window/screen proctoring capture (every 10 seconds) using Electron `webContents.capturePage()`, saved automatically to `app/user-screen-snap/`.
+  - Implemented manual on-demand snapshot triggers with live visual feedback in the Exam Arena.
+- **Resilient Multi-Environment Fallback Architecture**:
+  - Replaced brittle `ImageCapture`-only dependencies with an HTML5 `<canvas>` 2D context rendering engine fallback that guarantees zero-failure frame extraction in standard browsers and Electron.
+  - Added stream persistence across React view transitions (`SETUP` -> `EXAM` -> `RESULTS`), fixing the stream unmount issue where proctoring feeds would previously go dark upon exam entry.
+  - Added browser-mode timers and snapshot interval fallbacks so proctoring functions continuously even outside Electron.
+- **Dual Telemetry & Proctoring Metrics**:
+  - Live webcam and screen capture counters displayed in real-time in the active examination proctor sidebar (`📹 X cam`, `🖥️ Y scr`).
+  - Included proctoring capture summary on the final post-exam assessment scorecard (`ExamResults.jsx`).
+
+---
+
+## Yesterday's Lab Work - 2026-09-23
+
+### Dual Proctoring Screenshot Architecture & Storage Pipeline
+- **Electron IPC Screen Capture Pipeline**:
+  - Engineered `capture-screen-snap` and `store-screen-snap-image-on-disk` IPC channels in `app/app.js` and `app/preload.js`.
+  - Created automatic storage directory initializers for both `app/user-camera-snap/` and `app/user-screen-snap/`.
+  - Configured synchronized periodic timer broadcasts for candidate timer ticks (1s), camera capture events (5s), and screen capture events (10s).
+- **Stream Lifecycle & Canvas Frame Capture Engine**:
+  - Designed `mediaStream` state coordinator in `src/App.jsx` to prevent MediaStream garbage collection during stage transitions.
+  - Built canvas blob-to-buffer conversion utility for saving candidate photos directly to local disk storage.
+  - Implemented automatic stop-proctoring cleanup upon final exam submission (`POST /exam/submit`).
+
+---
+
+## Previous Lab Work
+
+### Complete Frontend & Backend Integration - 2026-09-22
 - **All 7 Backend Endpoints Fully Integrated**: Connected the React frontend with the Express backend (`http://localhost:3000`) without omitting any endpoint.
 - **Created Unified API Service Layer (`src/services/api.js`)**: Encapsulated all HTTP requests (`fetch` API) with structured error handling, payload formatting, and connectivity diagnostics.
 - **Pre-Exam Candidate Onboarding (`src/components/PreExamSetup.jsx`)**:
@@ -26,24 +57,6 @@ Athena Clone is a proctored online examination and assessment desktop applicatio
   - Displays summary metrics: Total Questions, Attempted, Correct, Wrong, and Accuracy Percentage.
   - Full Question-by-Question Response Audit fetched from `GET /exam/session/:sessionId` with submitted choices and timestamps.
   - Provides a **Start Another Examination** workflow to reset and take new tests cleanly.
-
----
-
-## Backend API Endpoints & Frontend Integration Map
-
-| # | HTTP Method | Endpoint | Backend Purpose | Frontend Component & Usecase |
-|---|---|---|---|---|
-| **1** | `GET` | `/` | Health check | `Header.jsx`, `PreExamSetup.jsx`: Live server connection status badge and retry trigger. |
-| **2** | `POST` | `/exam/start` | Starts new session | `PreExamSetup.jsx`: Initializes exam session with `userId` and `name`, returns `sessionId`. |
-| **3** | `GET` | `/exam/mcq` | Returns all questions | `App.jsx`, `ExamArena.jsx`: Populates question palette navigation, progress tracker, and filters. |
-| **4** | `GET` | `/exam/mcq/:id` | Returns single question | `ExamArena.jsx`: Fetches question prompt and option choices dynamically when navigated to. |
-| **5** | `POST` | `/exam/answer` | Validates & saves answer | `ExamArena.jsx`: Submits option index (`selectedAnswer`), receives server validation and updates stats. |
-| **6** | `GET` | `/exam/session/:sessionId` | Returns session progress | `ExamArena.jsx`, `ExamResults.jsx`: Live session sync button, answered status tracking, and final scorecard audit. |
-| **7** | `POST` | `/exam/submit` | Submits exam | `ExamArena.jsx`: Marks session as submitted, locks test, and returns final attempted/correct/wrong totals. |
-
----
-
-## Previous Lab Work
 
 ### Backend Lab Work - 2026-09-21
 - Added Express backend in `backend/` on port `3000` with `cors` and JSON middleware.

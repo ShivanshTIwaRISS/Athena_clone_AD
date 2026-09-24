@@ -1130,14 +1130,45 @@
   animation: pulse-dot 1s infinite;
 }
 
+.snapshot-tags-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .snapshot-tag {
-  font-size: 11px;
+  font-size: 10px;
   color: #64748b;
   background: #f1f5f9;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 600;
+  white-space: nowrap;
 }
+
+.snapshot-tag.tag-screen {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.snapshot-flash {
+  animation: snap-pulse 0.5s ease-out;
+}
+
+@keyframes snap-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+    border-color: #3b82f6;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.2);
+    border-color: #2563eb;
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
 
 .proctor-video-wrap {
   width: 100%;

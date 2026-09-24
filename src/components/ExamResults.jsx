@@ -7,6 +7,7 @@ export default function ExamResults({
   questionsList,
   timer,
   snapshotCount,
+  screenSnapshotCount = 0,
   onRestart,
 }) {
   const attempted = resultData?.attempted ?? sessionData?.attempted ?? 0;
@@ -46,9 +47,12 @@ export default function ExamResults({
         </div>
         <div className="summary-col">
           <span className="col-label">Proctor Snaps</span>
-          <strong className="col-val">{snapshotCount} captures</strong>
+          <strong className="col-val">
+            {snapshotCount} cam {screenSnapshotCount > 0 ? `+ ${screenSnapshotCount} scr` : ''}
+          </strong>
         </div>
       </div>
+
 
       {/* Metric Cards Grid */}
       <div className="score-metrics-grid">
@@ -175,5 +179,6 @@ ExamResults.propTypes = {
   questionsList: PropTypes.array.isRequired,
   timer: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   snapshotCount: PropTypes.number.isRequired,
+  screenSnapshotCount: PropTypes.number,
   onRestart: PropTypes.func.isRequired,
 };
