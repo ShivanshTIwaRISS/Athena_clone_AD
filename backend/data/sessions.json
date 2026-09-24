@@ -271,5 +271,17 @@
         "answeredAt": "2026-09-22T06:39:28.688Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1790230978074",
+    "userId": "student-101",
+    "name": "shivansh",
+    "startedAt": "2026-09-24T06:22:58.074Z",
+    "submittedAt": "2026-09-24T06:23:59.490Z",
+    "status": "submitted",
+    "attempted": 0,
+    "correct": 0,
+    "wrong": 0,
+    "answers": []
   }
 ]
