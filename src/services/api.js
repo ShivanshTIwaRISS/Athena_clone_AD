@@ -1,140 +1,242 @@
 // src/services/api.js
 /**
- * Backend API Client for Athena Exam Platform
- * Integrates all 7 Express Backend Endpoints:
- * 1. GET / - Backend Health Check
- * 2. POST /exam/start - Start Exam Session
- * 3. GET /exam/mcq - Get All Questions
- * 4. GET /exam/mcq/:id - Get Single Question by ID
- * 5. POST /exam/answer - Submit an Answer
- * 6. GET /exam/session/:sessionId - Fetch Session Progress & Status
- * 7. POST /exam/submit - Finalize and Submit Exam
+ * VEYRA Backend API Client
+ * Smart Assessments. Seamless Execution.
+ *
+ * Covers all backend endpoints with consistent error handling,
+ * automatic token injection, and typed responses.
  */
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://127.0.0.1:3000';
 
-/**
- * Helper function for unified JSON fetch requests with error handling
- */
+// ─── Token Management ─────────────────────────────────────────────────────────
+export function getToken() {
+  return localStorage.getItem('veyra_token');
+}
+
+export function setToken(token) {
+  if (token) localStorage.setItem('veyra_token', token);
+  else localStorage.removeItem('veyra_token');
+}
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('veyra_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+export function setStoredUser(user) {
+  if (user) localStorage.setItem('veyra_user', JSON.stringify(user));
+  else localStorage.removeItem('veyra_user');
+}
+
+export function clearAuth() {
+  localStorage.removeItem('veyra_token');
+  localStorage.removeItem('veyra_user');
+}
+
+// ─── Core Request Helper ──────────────────────────────────────────────────────
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-  const defaultHeaders = {
+  const token = getToken();
+  const headers = {
     'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
   };
 
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
-
-    const data = await response.json();
+    const response = await fetch(url, { ...options, headers });
+    const data = await response.json().catch(() => ({ message: 'Invalid JSON response' }));
 
     if (!response.ok) {
-      const errorMsg = data?.message || `Request failed with status ${response.status}`;
-      const error = new Error(errorMsg);
+      const error = new Error(data?.message || `Request failed: ${response.status}`);
       error.status = response.status;
       error.data = data;
+      if (response.status === 401) {
+        clearAuth();
+      }
       throw error;
     }
-
     return data;
   } catch (err) {
-    if (err.name === 'TypeError' && err.message.includes('fetch')) {
-      throw new Error(`Cannot connect to Exam Backend at ${API_BASE_URL}. Ensure the backend server is running.`, {
-        cause: err,
-      });
+    if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+      throw new Error(`Cannot connect to VEYRA backend at ${API_BASE_URL}. Ensure the backend server is running.`, { cause: err });
     }
     throw err;
   }
 }
 
-/**
- * 1. GET / - Check backend health status
- */
+// ─── Health ───────────────────────────────────────────────────────────────────
 export async function checkBackendHealth() {
   return request('/');
 }
 
-/**
- * 2. POST /exam/start - Initialize a new exam session
- * @param {string} userId - Unique student/candidate ID
- * @param {string} name - Candidate full name
- * @returns {Promise<{message: string, sessionId: string}>}
- */
-export async function startExam(userId, name) {
-  return request('/exam/start', {
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+export async function firstRunSetup({ name, email, password }) {
+  return request('/auth/setup', {
     method: 'POST',
-    body: JSON.stringify({ userId, name }),
+    body: JSON.stringify({ name, email, password }),
   });
 }
 
-/**
- * 3. GET /exam/mcq - Fetch all questions without answers (for question list/palette)
- * @returns {Promise<Array<{id: number, question: string, options: string[]}>>}
- */
+export async function signIn({ email, password }) {
+  return request('/auth/signin', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function getCurrentUser() {
+  return request('/auth/me');
+}
+
+export async function registerUser({ name, email, password, role }) {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password, role }),
+  });
+}
+
+export async function listUsers() {
+  return request('/users');
+}
+
+// ─── Exams ────────────────────────────────────────────────────────────────────
+export async function listExams() {
+  return request('/exams');
+}
+
+export async function getExam(id) {
+  return request(`/exams/${id}`);
+}
+
+export async function createExam(data) {
+  return request('/exams', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateExam(id, data) {
+  return request(`/exams/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export async function setExamStatus(id, status) {
+  return request(`/exams/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+}
+
+export async function duplicateExam(id) {
+  return request(`/exams/${id}/duplicate`, { method: 'POST' });
+}
+
+export async function deleteExam(id) {
+  return request(`/exams/${id}`, { method: 'DELETE' });
+}
+
+// ─── Question Bank ────────────────────────────────────────────────────────────
+export async function listQuestions(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.difficulty) params.set('difficulty', filters.difficulty);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.topic) params.set('topic', filters.topic);
+  const qs = params.toString();
+  return request(`/questions${qs ? '?' + qs : ''}`);
+}
+
+export async function getQuestion(id) {
+  return request(`/questions/${id}`);
+}
+
+export async function createQuestion(data) {
+  return request('/questions', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateQuestion(id, data) {
+  return request(`/questions/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export async function deleteQuestion(id) {
+  return request(`/questions/${id}`, { method: 'DELETE' });
+}
+
+export async function importQuestions(questions) {
+  return request('/questions/import', { method: 'POST', body: JSON.stringify({ questions }) });
+}
+
+// ─── Exam Questions (candidate delivery) ─────────────────────────────────────
+export async function getExamQuestions(examId) {
+  return request(`/exam/${examId}/questions`);
+}
+
+// ─── Legacy (backward compat) ─────────────────────────────────────────────────
 export async function getAllQuestions() {
   return request('/exam/mcq');
 }
 
-/**
- * 4. GET /exam/mcq/:id - Fetch single question details by question ID
- * @param {number|string} id - Question ID
- * @returns {Promise<{id: number, question: string, options: string[]}>}
- */
 export async function getQuestionById(id) {
   return request(`/exam/mcq/${id}`);
 }
 
-/**
- * 5. POST /exam/answer - Submit student answer for a question
- * @param {string} sessionId - Active exam session ID
- * @param {number} questionId - ID of question being answered
- * @param {number} selectedAnswer - Zero-based option index (0, 1, 2, 3...)
- * @returns {Promise<{message: string, isCorrect: boolean, attempted: number, correct: number, wrong: number}>}
- */
-export async function submitAnswer(sessionId, questionId, selectedAnswer) {
-  return request('/exam/answer', {
+// ─── Exam Sessions ────────────────────────────────────────────────────────────
+export async function startExam(examId) {
+  return request('/exam/start', {
     method: 'POST',
-    body: JSON.stringify({
-      sessionId,
-      questionId: Number(questionId),
-      selectedAnswer: Number(selectedAnswer),
-    }),
+    body: JSON.stringify({ examId }),
   });
 }
 
-/**
- * 6. GET /exam/session/:sessionId - Fetch real-time session progress and answer history
- * @param {string} sessionId - Active exam session ID
- * @returns {Promise<{
- *   sessionId: string,
- *   userId: string,
- *   name: string,
- *   startedAt: string,
- *   submittedAt: string|null,
- *   status: string,
- *   attempted: number,
- *   correct: number,
- *   wrong: number,
- *   answers: Array<{questionId: number, selectedAnswer: number, isCorrect: boolean, answeredAt: string}>
- * }>}
- */
+// Legacy start (no examId)
+export async function startExamLegacy(userId, name) {
+  void userId; void name; // userId/name now come from auth token
+  return request('/exam/start', { method: 'POST', body: JSON.stringify({}) });
+}
+
+export async function submitAnswer(sessionId, questionId, selectedAnswer) {
+  return request('/exam/answer', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId, questionId: String(questionId), selectedAnswer: Number(selectedAnswer) }),
+  });
+}
+
 export async function getSessionDetails(sessionId) {
   return request(`/exam/session/${encodeURIComponent(sessionId)}`);
 }
 
-/**
- * 7. POST /exam/submit - Submit and complete the whole exam
- * @param {string} sessionId - Active exam session ID
- * @returns {Promise<{message: string, result: {attempted: number, correct: number, wrong: number}}>}
- */
 export async function submitExam(sessionId) {
   return request('/exam/submit', {
     method: 'POST',
     body: JSON.stringify({ sessionId }),
   });
+}
+
+export async function recordProctoringSnap(sessionId, type) {
+  return request(`/exam/session/${encodeURIComponent(sessionId)}/proctoring`, {
+    method: 'POST',
+    body: JSON.stringify({ type }),
+  });
+}
+
+// ─── Attempt History ──────────────────────────────────────────────────────────
+export async function getMyAttempts() {
+  return request('/attempts/mine');
+}
+
+export async function getAllSessions(examId) {
+  const qs = examId ? `?examId=${examId}` : '';
+  return request(`/sessions${qs}`);
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+export async function getAnalyticsOverview() {
+  return request('/analytics/overview');
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export async function getSettings() {
+  return request('/settings');
+}
+
+export async function saveSettings(data) {
+  return request('/settings', { method: 'PUT', body: JSON.stringify(data) });
 }

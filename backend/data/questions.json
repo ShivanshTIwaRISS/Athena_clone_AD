@@ -2,56 +2,287 @@
   {
     "id": 1,
     "question": "Which Electron process is responsible for creating BrowserWindow?",
+    "type": "single-choice",
     "options": [
       "Renderer Process",
       "Main Process",
       "React Process",
       "Preload Process"
     ],
-    "correctAnswer": 1
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "Electron Architecture",
+    "category": "Technology",
+    "explanation": "The Main Process is the entry point and is responsible for creating BrowserWindow instances and managing the application lifecycle.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
   },
   {
     "id": 2,
     "question": "Which Electron API is commonly used in the renderer to invoke a handler in the main process?",
+    "type": "single-choice",
     "options": [
       "ipcRenderer.invoke",
       "BrowserWindow.loadURL",
       "fs.writeFileSync",
       "dialog.showMessageBox"
     ],
-    "correctAnswer": 0
+    "correctAnswer": 0,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "IPC Communication",
+    "category": "Technology",
+    "explanation": "ipcRenderer.invoke() sends a message to the main process and returns a Promise that resolves with the handler's return value.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
   },
   {
     "id": 3,
     "question": "Why is a preload script commonly used in Electron?",
+    "type": "single-choice",
     "options": [
       "To style the React application",
       "To expose controlled APIs safely to the renderer",
       "To create the Express server",
       "To replace the main process"
     ],
-    "correctAnswer": 1
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "medium",
+    "topic": "Security",
+    "category": "Technology",
+    "explanation": "A preload script runs in the renderer context but has access to Node.js APIs. It uses contextBridge.exposeInMainWorld() to safely expose specific APIs to the renderer.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
   },
   {
     "id": 4,
     "question": "Which HTTP method is normally used to fetch exam questions?",
+    "type": "single-choice",
     "options": [
       "GET",
       "DELETE",
       "PATCH",
       "CONNECT"
     ],
-    "correctAnswer": 0
+    "correctAnswer": 0,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "REST API",
+    "category": "Technology",
+    "explanation": "GET is the appropriate HTTP method for retrieving resources. It is idempotent and safe.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
   },
   {
     "id": 5,
     "question": "What does fs.writeFileSync() do?",
+    "type": "single-choice",
     "options": [
       "Reads camera frames",
       "Writes data to a file and waits until it finishes",
       "Starts the Electron renderer",
       "Sends an IPC event"
     ],
-    "correctAnswer": 1
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "Node.js",
+    "category": "Technology",
+    "explanation": "fs.writeFileSync() is a synchronous function that writes data to a file, blocking execution until the write is complete.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 6,
+    "question": "What is the purpose of contextIsolation: true in Electron BrowserWindow webPreferences?",
+    "type": "single-choice",
+    "options": [
+      "It disables all IPC communication",
+      "It isolates the preload script context from the renderer page context for security",
+      "It enables Node.js APIs in the renderer",
+      "It prevents the window from being resized"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "medium",
+    "topic": "Security",
+    "category": "Technology",
+    "explanation": "contextIsolation: true ensures that the preload script and the renderer page run in separate JavaScript contexts, preventing renderer-side code from accessing Node.js APIs directly.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 7,
+    "question": "Which of the following is a benefit of using Vite as a build tool?",
+    "type": "single-choice",
+    "options": [
+      "It eliminates the need for a Node.js runtime",
+      "It provides extremely fast Hot Module Replacement (HMR) using native ESM",
+      "It automatically generates database schemas",
+      "It replaces React with a proprietary rendering engine"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "Build Tools",
+    "category": "Technology",
+    "explanation": "Vite uses native ES modules in development to serve files on demand, making HMR nearly instant regardless of application size.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 8,
+    "question": "In React, what is the primary purpose of the useEffect hook?",
+    "type": "single-choice",
+    "options": [
+      "To define reusable UI components",
+      "To perform side effects in function components",
+      "To manage global application state",
+      "To compile JSX to JavaScript"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "React",
+    "category": "Technology",
+    "explanation": "useEffect allows function components to perform side effects such as data fetching, subscriptions, and DOM manipulation after rendering.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 9,
+    "question": "What does the acronym REST stand for in REST API?",
+    "type": "single-choice",
+    "options": [
+      "Remote Execution and State Transfer",
+      "Representational State Transfer",
+      "Relational Entity Storage Technology",
+      "Responsive Event-based Service Technology"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "REST API",
+    "category": "Technology",
+    "explanation": "REST stands for Representational State Transfer, an architectural style for distributed hypermedia systems.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 10,
+    "question": "Which HTTP status code indicates a successful resource creation?",
+    "type": "single-choice",
+    "options": [
+      "200 OK",
+      "201 Created",
+      "204 No Content",
+      "301 Moved Permanently"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "easy",
+    "topic": "REST API",
+    "category": "Technology",
+    "explanation": "HTTP 201 Created is the standard response for a POST request that successfully creates a new resource.",
+    "status": "published",
+    "createdAt": "2026-10-01T00:00:00.000Z",
+    "updatedAt": "2026-10-17T19:48:59.114Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 11,
+    "question": "What is the primary function of an operating system kernel?",
+    "type": "mcq",
+    "options": [
+      "Compiling high-level programming languages",
+      "Managing core system resources and hardware interaction",
+      "Designing graphical desktop user interfaces",
+      "Formatting hard drives during partition creation"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "medium",
+    "topic": "General",
+    "category": "Operating Systems",
+    "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
+    "status": "published",
+    "createdAt": "2026-10-17T19:48:59.121Z",
+    "updatedAt": "2026-10-17T19:48:59.121Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 12,
+    "question": "What is the primary function of an operating system kernel?",
+    "type": "mcq",
+    "options": [
+      "Compiling high-level programming languages",
+      "Managing core system resources and hardware interaction",
+      "Designing graphical desktop user interfaces",
+      "Formatting hard drives during partition creation"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "medium",
+    "topic": "General",
+    "category": "Operating Systems",
+    "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
+    "status": "published",
+    "createdAt": "2026-10-17T19:50:13.992Z",
+    "updatedAt": "2026-10-17T19:50:13.992Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
+  },
+  {
+    "id": 13,
+    "question": "What is the primary function of an operating system kernel?",
+    "type": "mcq",
+    "options": [
+      "Compiling high-level programming languages",
+      "Managing core system resources and hardware interaction",
+      "Designing graphical desktop user interfaces",
+      "Formatting hard drives during partition creation"
+    ],
+    "correctAnswer": 1,
+    "marks": 1,
+    "negativeMark": 0,
+    "difficulty": "medium",
+    "topic": "General",
+    "category": "Operating Systems",
+    "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
+    "status": "published",
+    "createdAt": "2026-10-17T19:52:12.627Z",
+    "updatedAt": "2026-10-17T19:52:12.627Z",
+    "createdBy": "d78e4986-f336-4c2a-97d8-b281cf577bf7"
   }
 ]

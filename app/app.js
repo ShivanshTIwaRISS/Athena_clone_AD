@@ -1,177 +1,345 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+/**
+ * VEYRA Examination Platform - Electron Main Process
+ * Smart Assessments. Seamless Execution.
+ */
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from "electron";
 import { Buffer } from "node:buffer";
 import path from "path";
 import fs from "fs";
+import { spawn } from "child_process";
+import { createServer } from "net";
 
 let electronWindow = null;
+let backendProcess = null;
 let startTimestamp = null;
 let timerInterval = null;
 let cameraInterval = null;
 let screenInterval = null;
+let isShuttingDown = false;
 
-/**
- * Returns safe writable directory for camera snapshots
- */
+// ─── Path Helpers ─────────────────────────────────────────────────────────────
 function getCameraSnapDir() {
-    const baseDir = app.isPackaged
-        ? path.join(app.getPath("userData"), "user-camera-snap")
-        : path.join(import.meta.dirname, "user-camera-snap");
-    fs.mkdirSync(baseDir, { recursive: true });
-    return baseDir;
+  const baseDir = path.join(app.getPath("userData"), "veyra-camera-snaps");
+  fs.mkdirSync(baseDir, { recursive: true });
+  return baseDir;
 }
 
-/**
- * Returns safe writable directory for screen snapshots
- */
 function getScreenSnapDir() {
-    const baseDir = app.isPackaged
-        ? path.join(app.getPath("userData"), "user-screen-snap")
-        : path.join(import.meta.dirname, "user-screen-snap");
-    fs.mkdirSync(baseDir, { recursive: true });
-    return baseDir;
+  const baseDir = path.join(app.getPath("userData"), "veyra-screen-snaps");
+  fs.mkdirSync(baseDir, { recursive: true });
+  return baseDir;
 }
 
-function createWindow() {
-    electronWindow = new BrowserWindow({
-        height: 1000,
-        width: 1200,
-        title: "Athena Exam Portal",
-        webPreferences: {
-            devTools: !app.isPackaged,
-            preload: path.join(import.meta.dirname, 'preload.js')
-        }
-    });
+// ─── Port Availability ────────────────────────────────────────────────────────
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once("error", () => resolve(false));
+    server.once("listening", () => { server.close(); resolve(true); });
+    server.listen(port, "127.0.0.1");
+  });
+}
 
-    const indexPath = path.join(import.meta.dirname, '../dist/index.html');
-    if (app.isPackaged || fs.existsSync(indexPath)) {
-        electronWindow.loadFile(indexPath);
-    } else {
-        electronWindow.loadURL('http://localhost:5173');
+async function findFreePort(preferred = 3000) {
+  for (let p = preferred; p < preferred + 20; p++) {
+    if (await isPortFree(p)) return p;
+  }
+  return preferred;
+}
+
+// ─── Backend Spawn ────────────────────────────────────────────────────────────
+async function startBackend() {
+  const port = await findFreePort(3000);
+  const backendDir = app.isPackaged
+    ? path.join(process.resourcesPath, "backend")
+    : path.join(import.meta.dirname, "../backend");
+
+  const serverPath = path.join(backendDir, "server.js");
+  if (!fs.existsSync(serverPath)) {
+    console.warn("[VEYRA] Backend server.js not found at:", serverPath);
+    return port;
+  }
+
+  backendProcess = spawn("node", [serverPath], {
+    cwd: backendDir,
+    env: { ...process.env, PORT: String(port) },
+    stdio: "pipe",
+  });
+
+  backendProcess.stdout?.on("data", (d) => {
+    const msg = d.toString().trim();
+    if (msg) console.log(`[VEYRA Backend] ${msg}`);
+  });
+
+  backendProcess.stderr?.on("data", (d) => {
+    const msg = d.toString().trim();
+    if (msg) console.error(`[VEYRA Backend ERR] ${msg}`);
+  });
+
+  backendProcess.on("exit", (code) => {
+    if (!isShuttingDown) {
+      console.error(`[VEYRA] Backend exited unexpectedly (code ${code})`);
     }
+  });
+
+  // Wait for backend to be ready
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+  return port;
 }
 
-/**
- * Capture full electron window/screen snapshot
- */
+function stopBackend() {
+  if (backendProcess && !backendProcess.killed) {
+    backendProcess.kill("SIGTERM");
+    backendProcess = null;
+  }
+}
+
+// ─── Window Creation ──────────────────────────────────────────────────────────
+function createWindow(port = 3000) {
+  electronWindow = new BrowserWindow({
+    height: 900,
+    width: 1400,
+    minWidth: 1100,
+    minHeight: 700,
+    title: "VEYRA – Smart Assessments. Seamless Execution.",
+    backgroundColor: "#0d1117",
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    webPreferences: {
+      devTools: !app.isPackaged,
+      preload: path.join(import.meta.dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false, // needed for preload to import Node modules
+      webSecurity: true,
+    },
+  });
+
+  // Prevent navigation to external URLs
+  electronWindow.webContents.on("will-navigate", (event, url) => {
+    if (!url.startsWith("http://127.0.0.1") && !url.startsWith("file://")) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
+  });
+
+  // Prevent new windows
+  electronWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
+  const indexPath = path.join(import.meta.dirname, "../dist/index.html");
+  if (app.isPackaged || fs.existsSync(indexPath)) {
+    electronWindow.loadFile(indexPath);
+  } else {
+    electronWindow.loadURL("http://localhost:5173");
+  }
+
+  // Send backend port to renderer
+  electronWindow.webContents.once("did-finish-load", () => {
+    if (!electronWindow?.isDestroyed()) {
+      electronWindow.webContents.send("backend-port", port);
+    }
+  });
+}
+
+// ─── Screen Capture ───────────────────────────────────────────────────────────
 async function captureAndSaveScreen() {
-    if (!electronWindow || electronWindow.isDestroyed()) return null;
-    try {
-        const image = await electronWindow.webContents.capturePage();
-        const buffer = image.toJPEG(85);
-        const fileName = `${Date.now()}-screen.jpg`;
-        const screenSnapDir = getScreenSnapDir();
-        const filePath = path.join(screenSnapDir, fileName);
-        fs.writeFileSync(filePath, buffer);
-        if (!electronWindow.isDestroyed()) {
-            electronWindow.webContents.send('screen-snap-saved', {
-                fileName,
-                timestamp: Date.now()
-            });
-        }
-        return filePath;
-    } catch (err) {
-        console.error("Failed to capture screen snapshot:", err);
-        return null;
+  if (!electronWindow || electronWindow.isDestroyed()) return null;
+  try {
+    const image = await electronWindow.webContents.capturePage();
+    const buffer = image.toJPEG(80);
+    const fileName = `${Date.now()}-screen.jpg`;
+    const dir = getScreenSnapDir();
+    const filePath = path.join(dir, fileName);
+    fs.writeFileSync(filePath, buffer);
+    if (!electronWindow.isDestroyed()) {
+      electronWindow.webContents.send("screen-snap-saved", { fileName, timestamp: Date.now() });
     }
+    return filePath;
+  } catch (err) {
+    console.error("[VEYRA] Screen capture failed:", err.message);
+    return null;
+  }
 }
 
-ipcMain.handle('start-timer', () => {
-    startTimestamp = Date.now();
+// ─── IPC Handlers ─────────────────────────────────────────────────────────────
+ipcMain.handle("start-proctoring", (_event, opts = {}) => {
+  startTimestamp = Date.now();
+  const camInterval = opts.webcamInterval || 5000;
+  const scrInterval = opts.screenInterval || 10000;
 
-    if (timerInterval) clearInterval(timerInterval);
-    if (cameraInterval) clearInterval(cameraInterval);
-    if (screenInterval) clearInterval(screenInterval);
+  if (timerInterval) clearInterval(timerInterval);
+  if (cameraInterval) clearInterval(cameraInterval);
+  if (screenInterval) clearInterval(screenInterval);
 
-    // Send Timer Tick every 1s
-    timerInterval = setInterval(() => {
-        if (electronWindow && !electronWindow.isDestroyed()) {
-            electronWindow.webContents.send('timer', (Date.now() - startTimestamp) / 1000);
-        }
-    }, 1000);
-
-    // Request user's camera snap every 5s
-    cameraInterval = setInterval(() => {
-        if (electronWindow && !electronWindow.isDestroyed()) {
-            electronWindow.webContents.send('camera-shot');
-        }
-    }, 5000);
-
-    // Capture screen snapshot every 10s during proctoring
-    screenInterval = setInterval(() => {
-        captureAndSaveScreen();
-    }, 10000);
-
-    // Also take an immediate screen snapshot on exam start
-    setTimeout(() => {
-        captureAndSaveScreen();
-    }, 1000);
-
-    return true;
-});
-
-ipcMain.handle('stop-proctoring', () => {
-    if (timerInterval) clearInterval(timerInterval);
-    if (cameraInterval) clearInterval(cameraInterval);
-    if (screenInterval) clearInterval(screenInterval);
-    return true;
-});
-
-// Store camera snapshot sent by renderer
-ipcMain.handle('store-camera-snap-image-on-disk', (_event, data) => {
-    try {
-        const cameraSnapDir = getCameraSnapDir();
-        const filePath = path.join(cameraSnapDir, `${Date.now()}-cam.jpg`);
-        fs.writeFileSync(filePath, Buffer.from(data));
-        return { success: true, filePath };
-    } catch (err) {
-        console.error("Failed to store camera snapshot on disk:", err);
-        return { success: false, error: err.message };
+  timerInterval = setInterval(() => {
+    if (electronWindow && !electronWindow.isDestroyed()) {
+      electronWindow.webContents.send("timer", (Date.now() - startTimestamp) / 1000);
     }
-});
+  }, 1000);
 
-// Store screen snapshot sent by renderer
-ipcMain.handle('store-screen-snap-image-on-disk', (_event, data) => {
-    try {
-        const screenSnapDir = getScreenSnapDir();
-        const filePath = path.join(screenSnapDir, `${Date.now()}-screen.jpg`);
-        fs.writeFileSync(filePath, Buffer.from(data));
-        return { success: true, filePath };
-    } catch (err) {
-        console.error("Failed to store screen snapshot on disk:", err);
-        return { success: false, error: err.message };
+  cameraInterval = setInterval(() => {
+    if (electronWindow && !electronWindow.isDestroyed()) {
+      electronWindow.webContents.send("camera-shot");
     }
+  }, camInterval);
+
+  screenInterval = setInterval(() => {
+    captureAndSaveScreen();
+  }, scrInterval);
+
+  // Immediate first snap
+  setTimeout(() => captureAndSaveScreen(), 800);
+  return { started: true, camInterval, scrInterval };
 });
 
-// Explicit screen snapshot capture trigger
-ipcMain.handle('capture-screen-snap', async () => {
-    const savedPath = await captureAndSaveScreen();
-    return { success: Boolean(savedPath), path: savedPath };
+// Legacy alias
+ipcMain.handle("start-timer", () => {
+  startTimestamp = Date.now();
+  if (timerInterval) clearInterval(timerInterval);
+  if (cameraInterval) clearInterval(cameraInterval);
+  if (screenInterval) clearInterval(screenInterval);
+
+  timerInterval = setInterval(() => {
+    if (electronWindow && !electronWindow.isDestroyed()) {
+      electronWindow.webContents.send("timer", (Date.now() - startTimestamp) / 1000);
+    }
+  }, 1000);
+  cameraInterval = setInterval(() => {
+    if (electronWindow && !electronWindow.isDestroyed()) {
+      electronWindow.webContents.send("camera-shot");
+    }
+  }, 5000);
+  screenInterval = setInterval(() => { captureAndSaveScreen(); }, 10000);
+  setTimeout(() => captureAndSaveScreen(), 1000);
+  return true;
 });
 
+ipcMain.handle("stop-proctoring", () => {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (cameraInterval) { clearInterval(cameraInterval); cameraInterval = null; }
+  if (screenInterval) { clearInterval(screenInterval); screenInterval = null; }
+  startTimestamp = null;
+  return { stopped: true };
+});
+
+// Store camera snapshot from renderer
+ipcMain.handle("store-camera-snap-image-on-disk", (_event, data) => {
+  try {
+    if (!data || data.byteLength > 2 * 1024 * 1024) {
+      return { success: false, error: "Invalid or oversized image data" };
+    }
+    const dir = getCameraSnapDir();
+    const filePath = path.join(dir, `${Date.now()}-cam.jpg`);
+    fs.writeFileSync(filePath, Buffer.from(data));
+    return { success: true, filePath };
+  } catch (err) {
+    console.error("[VEYRA] Camera snap store failed:", err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+// Store screen snapshot from renderer
+ipcMain.handle("store-screen-snap-image-on-disk", (_event, data) => {
+  try {
+    if (!data || data.byteLength > 5 * 1024 * 1024) {
+      return { success: false, error: "Invalid or oversized image data" };
+    }
+    const dir = getScreenSnapDir();
+    const filePath = path.join(dir, `${Date.now()}-screen.jpg`);
+    fs.writeFileSync(filePath, Buffer.from(data));
+    return { success: true, filePath };
+  } catch (err) {
+    console.error("[VEYRA] Screen snap store failed:", err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle("capture-screen-snap", async () => {
+  const savedPath = await captureAndSaveScreen();
+  return { success: Boolean(savedPath), path: savedPath };
+});
+
+// Get snap counts
+ipcMain.handle("get-snap-dirs", () => {
+  return {
+    cameraDir: getCameraSnapDir(),
+    screenDir: getScreenSnapDir(),
+  };
+});
+
+// Get snap file counts
+ipcMain.handle("get-snap-counts", () => {
+  try {
+    const camDir = getCameraSnapDir();
+    const scrDir = getScreenSnapDir();
+    const cam = fs.readdirSync(camDir).filter((f) => f.endsWith(".jpg")).length;
+    const scr = fs.readdirSync(scrDir).filter((f) => f.endsWith(".jpg")).length;
+    return { camera: cam, screen: scr };
+  } catch {
+    return { camera: 0, screen: 0 };
+  }
+});
+
+// Theme
+ipcMain.handle("set-theme", (_event, theme) => {
+  nativeTheme.themeSource = theme === "light" ? "light" : "dark";
+  return { theme: nativeTheme.shouldUseDarkColors ? "dark" : "light" };
+});
+
+ipcMain.handle("get-theme", () => {
+  return { theme: nativeTheme.shouldUseDarkColors ? "dark" : "light" };
+});
+
+// App info
+ipcMain.handle("get-app-info", () => ({
+  name: "VEYRA",
+  version: app.getVersion(),
+  platform: process.platform,
+  arch: process.arch,
+  electronVersion: process.versions.electron,
+  nodeVersion: process.versions.node,
+  isPackaged: app.isPackaged,
+  userData: app.getPath("userData"),
+}));
+
+// Rules dialog
 ipcMain.on("show-rules", () => {
-    if (!electronWindow || electronWindow.isDestroyed()) return;
-    dialog.showMessageBox(electronWindow, {
-        type: "info",
-        title: "Athena Exam Rules",
-        message: "Exam Rules & Proctoring Policies",
-        detail:
-            "1. Stay on the exam screen at all times.\n" +
-            "2. Camera and screen proctoring must remain enabled.\n" +
-            "3. Automated snapshots of camera and exam window are recorded.\n" +
-            "4. Do not use external assistance or open unauthorized tabs.\n" +
-            "5. Click Submit Exam when finished."
-    });
+  if (!electronWindow || electronWindow.isDestroyed()) return;
+  dialog.showMessageBox(electronWindow, {
+    type: "info",
+    title: "VEYRA – Examination Rules",
+    message: "Exam Rules & Proctoring Policies",
+    detail:
+      "1. Stay on the exam screen at all times.\n" +
+      "2. Webcam must remain enabled and visible throughout.\n" +
+      "3. Automated snapshots of your webcam and exam window are recorded.\n" +
+      "4. Do not use external assistance or open unauthorized applications.\n" +
+      "5. Click Submit Exam when finished or when time expires.\n" +
+      "6. All proctoring data is stored locally on this machine.",
+  });
 });
 
-app.whenReady().then(() => {
-    // Ensure writable directories are initialized
-    getCameraSnapDir();
-    getScreenSnapDir();
-    createWindow();
+// ─── App Lifecycle ────────────────────────────────────────────────────────────
+app.whenReady().then(async () => {
+  const port = await startBackend();
+  getCameraSnapDir();
+  getScreenSnapDir();
+  createWindow(port);
 });
 
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+app.on("window-all-closed", () => {
+  isShuttingDown = true;
+  if (timerInterval) clearInterval(timerInterval);
+  if (cameraInterval) clearInterval(cameraInterval);
+  if (screenInterval) clearInterval(screenInterval);
+  stopBackend();
+  if (process.platform !== "darwin") app.quit();
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+app.on("before-quit", () => {
+  isShuttingDown = true;
+  stopBackend();
 });

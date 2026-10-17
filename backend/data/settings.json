@@ -1,0 +1,12 @@
+{
+  "appName": "VEYRA",
+  "theme": "dark",
+  "proctoring": {
+    "webcamInterval": 5000,
+    "screenInterval": 10000
+  },
+  "retention": {
+    "keepSnapsForDays": 30
+  },
+  "institutionName": "VEYRA University Test Lab"
+}

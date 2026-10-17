@@ -1,155 +1,145 @@
-# Athena Clone
+# VEYRA
 
-Athena Clone is a proctored online examination and assessment desktop application built with **Electron**, **React**, and **Express**. It integrates real-time webcam proctoring, fullscreen security enforcement, automated snapshot captures, and a full-featured MCQ examination lifecycle powered by an Express REST API.
+> **Smart Assessments. Seamless Execution.**  
+> A desktop-first examination, quiz, assessment, and proctoring platform.
 
----
-
-## Today's Lab Work - 2026-09-24
-
-### Automated Proctoring Screenshot Engine & Stream Resilience Hardening
-- **Automated Multi-Source Proctoring Snapshots**:
-  - Implemented continuous webcam snapshots (every 5 seconds) saved to `app/user-camera-snap/`.
-  - Implemented high-resolution full-window/screen proctoring capture (every 10 seconds) using Electron `webContents.capturePage()`, saved automatically to `app/user-screen-snap/`.
-  - Implemented manual on-demand snapshot triggers with live visual feedback in the Exam Arena.
-- **Resilient Multi-Environment Fallback Architecture**:
-  - Replaced brittle `ImageCapture`-only dependencies with an HTML5 `<canvas>` 2D context rendering engine fallback that guarantees zero-failure frame extraction in standard browsers and Electron.
-  - Added stream persistence across React view transitions (`SETUP` -> `EXAM` -> `RESULTS`), fixing the stream unmount issue where proctoring feeds would previously go dark upon exam entry.
-  - Added browser-mode timers and snapshot interval fallbacks so proctoring functions continuously even outside Electron.
-- **Dual Telemetry & Proctoring Metrics**:
-  - Live webcam and screen capture counters displayed in real-time in the active examination proctor sidebar (`📹 X cam`, `🖥️ Y scr`).
-  - Included proctoring capture summary on the final post-exam assessment scorecard (`ExamResults.jsx`).
+VEYRA is an enterprise-grade desktop assessment environment engineered with **Electron**, **React**, and an authoritative **Node.js/Express** backend. It delivers strict examination integrity, synchronized proctoring, rich administrative blueprints, and an intuitive candidate testing arena.
 
 ---
 
-## Yesterday's Lab Work - 2026-09-23
+## 🌟 Key Features & Capabilities
 
-### Dual Proctoring Screenshot Architecture & Storage Pipeline
-- **Electron IPC Screen Capture Pipeline**:
-  - Engineered `capture-screen-snap` and `store-screen-snap-image-on-disk` IPC channels in `app/app.js` and `app/preload.js`.
-  - Created automatic storage directory initializers for both `app/user-camera-snap/` and `app/user-screen-snap/`.
-  - Configured synchronized periodic timer broadcasts for candidate timer ticks (1s), camera capture events (5s), and screen capture events (10s).
-- **Stream Lifecycle & Canvas Frame Capture Engine**:
-  - Designed `mediaStream` state coordinator in `src/App.jsx` to prevent MediaStream garbage collection during stage transitions.
-  - Built canvas blob-to-buffer conversion utility for saving candidate photos directly to local disk storage.
-  - Implemented automatic stop-proctoring cleanup upon final exam submission (`POST /exam/submit`).
+### 🛡️ Candidate Experience & Secure Testing Arena
+- **Pre-Flight Hardware Verification**: Real-time webcam check, audio readiness, network health ping, and strict fullscreen mode enforcement before entering any assessment.
+- **Timed Exam Arena**: Auto-saving answers, synchronized timer countdown with audio-visual alerts, non-linear question palette navigation, answered/unanswered/flagged filters.
+- **Dual Multi-Source Proctoring**: Periodic high-resolution webcam snapshots combined with native Electron desktop screen captures, streaming metadata to local audit repositories.
+- **Comprehensive Result Scorecard**: Instant performance analytics, score accuracy percentage, review breakdown with explanations, and pass/retake indicators.
 
----
-
-## Previous Lab Work
-
-### Complete Frontend & Backend Integration - 2026-09-22
-- **All 7 Backend Endpoints Fully Integrated**: Connected the React frontend with the Express backend (`http://localhost:3000`) without omitting any endpoint.
-- **Created Unified API Service Layer (`src/services/api.js`)**: Encapsulated all HTTP requests (`fetch` API) with structured error handling, payload formatting, and connectivity diagnostics.
-- **Pre-Exam Candidate Onboarding (`src/components/PreExamSetup.jsx`)**:
-  - Added candidate verification inputs for Student ID (`userId`) and Full Name (`name`).
-  - Integrated `GET /` connectivity check badge with automatic health polling and manual retry button.
-  - Required camera hardware verification and fullscreen enablement before enabling the **Start Examination** CTA.
-  - Linked native Electron rules dialog (`window.athena.showRules()`) and an in-app interactive modal.
-- **Interactive Examination Arena (`src/components/ExamArena.jsx`)**:
-  - **Auto-Save on Selection**: Selecting any option automatically persists candidate's choice in state across all question switches and immediately syncs with `POST /exam/answer`.
-  - **Final Submission Auto-Flush**: When clicking *Submit Exam*, all selected/drafted options are automatically validated and submitted to the backend before calling `POST /exam/submit`.
-  - **Question Navigation Palette (`GET /exam/mcq`)**: Displays all assessment questions with status tags (Current, Answered / Auto-saved, Unanswered) and quick filter tabs.
-  - **Dynamic Question Loader (`GET /exam/mcq/:id`)**: Fetches specific question data on demand when switching questions or clicking palette chips.
-  - **Single-Attempt Answer Submission (`POST /exam/answer`)**: Submits chosen MCQ option to backend, locks answered questions per backend rules, and provides instant confirmation.
-  - **Live Session Progress Telemetry (`GET /exam/session/:sessionId`)**: Synchronizes live score, attempted count, remaining questions, and answered records with a dedicated "Sync Progress" trigger.
-  - **Final Submission Confirmation Modal (`POST /exam/submit`)**: Displays auto-saved question counts, warns user about unanswered questions, completes the exam session, and transitions to results.
-- **Comprehensive Scorecard & Result Review (`src/components/ExamResults.jsx`)**:
-  - Displays summary metrics: Total Questions, Attempted, Correct, Wrong, and Accuracy Percentage.
-  - Full Question-by-Question Response Audit fetched from `GET /exam/session/:sessionId` with submitted choices and timestamps.
-  - Provides a **Start Another Examination** workflow to reset and take new tests cleanly.
-
-### Backend Lab Work - 2026-09-21
-- Added Express backend in `backend/` on port `3000` with `cors` and JSON middleware.
-- Built JSON persistence using `backend/data/questions.json` and `backend/data/sessions.json`.
-- Implemented secure answer verification where `correctAnswer` is kept strictly on server.
-
-### Proctoring Foundation Lab Work - 2026-09-20
-- Added Electron IPC listeners for main-process timer ticks and periodic camera snapshot events.
-- Used browser `ImageCapture` API to take camera snapshots every 5 seconds.
-- Implemented `storeCameraSnapImageOnDisk` to save JPG files in `app/user-camera-snap/`.
-- Added native Electron contest rules dialog via `dialog.showMessageBox`.
+### ⚙️ Administrative Control Center
+- **Executive Analytics Dashboard**: Key metrics (Pass rates, average scores, total tests administered, proctoring frame counts, and candidate logs).
+- **Exam Blueprint Authoring**: Create, configure, duplicate, publish, and archive custom examinations with flexible timing, scoring benchmarks, question randomizers, and rigor settings.
+- **Question Bank Repository**: Domain/topic-organized question bank with multiple-choice items, rich explanations, cognitive difficulty tags, and bulk JSON import.
+- **Identity & Access Management**: Secure user registry for administrators, proctors, and candidate students with role-based routing.
+- **Session Audit Trails**: Inspect every candidate attempt with exact timestamped answers, question durations, and proctoring snapshot telemetry.
+- **Global Settings & Diagnostics**: Institution branding, proctoring cadence thresholds, and desktop hardware diagnostics.
 
 ---
 
-## Project Structure
+## 🏗️ Architecture & Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Desktop Shell** | Electron, Node.js IPC, Native ContextBridge, Screen Capture API |
+| **Frontend UI** | React 19, Vanilla CSS Design System, Lucide-style SVG icons |
+| **Backend API** | Node.js, Express, bcrypt password hashing, JSON Web Tokens (JWT) |
+| **Persistence** | Atomic file-system JSON storage with transactional `.tmp` write swaps |
+| **Testing & Quality** | Integration test suite (`backend/tests/run-tests.js`), ESLint, Vite |
+
+---
+
+## 📁 Repository Structure
 
 ```text
 Athena-Clone/
 ├── app/
-│   ├── app.js                 # Electron main process (Window management, IPC timers, snapshot storage)
-│   └── preload.js             # Secure contextBridge exposing window.athena API
+│   ├── app.js                 # Electron main process (Window management, proctoring IPC, snapshot storage)
+│   └── preload.js             # ContextBridge exposing secure `window.veyra` & backward-compatible APIs
 ├── backend/
-│   ├── data/
-│   │   ├── questions.json     # Question bank (with server-side correctAnswer)
-│   │   └── sessions.json      # Exam sessions database
-│   ├── package.json           # Backend Express configuration
-│   ├── server.js              # Express REST API (7 endpoints)
-│   └── README.md              # Backend documentation
+│   ├── data/                  # Persistence data files (exams, questions, sessions, users, settings)
+│   ├── tests/
+│   │   └── run-tests.js       # End-to-end backend integration test suite
+│   ├── server.js              # Express REST API (Auth, Exams, Questions, Proctoring, Analytics)
+│   └── README.md              # Backend technical documentation
 ├── src/
 │   ├── components/
-│   │   ├── ExamArena.jsx      # Active exam interface (palette, question workspace, live proctoring)
-│   │   ├── ExamResults.jsx    # Post-exam scorecard and detailed response audit breakdown
-│   │   ├── Header.jsx         # Top navbar with live timer, session badge, and API health status
-│   │   ├── PreExamSetup.jsx   # Candidate ID/Name setup, camera verification, fullscreen mode
-│   │   └── RulesModal.jsx     # Exam instructions dialog with native Electron trigger
+│   │   ├── AdminDashboard.jsx    # Administrative metrics, charts, and activity log
+│   │   ├── AppHeader.jsx         # Sticky navigation header with live timer and status chips
+│   │   ├── AttemptHistory.jsx    # Session audit trails for admins & candidates
+│   │   ├── AuthScreen.jsx        # Login & first-run administrator onboarding
+│   │   ├── CandidateDashboard.jsx# Candidate portal & exam selection
+│   │   ├── ExamArena.jsx         # Live examination arena with question palette
+│   │   ├── ExamEditor.jsx        # Assessment blueprint designer
+│   │   ├── ExamList.jsx          # Assessment management and publishing controls
+│   │   ├── ExamResults.jsx       # Post-exam scorecard, answer review, and proctor summary
+│   │   ├── PreExamSetup.jsx      # System readiness checklist, webcam test & consent
+│   │   ├── QuestionBank.jsx      # Item bank, filters, editor, and bulk JSON import
+│   │   ├── RulesModal.jsx        # Examination code of conduct modal
+│   │   ├── SettingsView.jsx      # Global institution parameters & diagnostics
+│   │   ├── Sidebar.jsx           # Role-aware navigation sidebar
+│   │   └── UserManagement.jsx    # User account management & registration
 │   ├── services/
-│   │   └── api.js             # API client functions for all 7 backend endpoints
-│   ├── App.css                # Polished, responsive component styles
-│   ├── App.jsx                # Main application coordinator & stage state manager
-│   ├── index.css              # Global tokens and design system
-│   └── main.jsx               # React DOM entry point
+│   │   └── api.js                # Unified API client for all backend endpoints
+│   ├── App.css                   # VEYRA design system and component styling
+│   ├── App.jsx                   # Root coordinator, role routing, and stage manager
+│   ├── index.css                 # CSS variables, dark theme tokens, typography
+│   └── main.jsx                  # React application entry point
 ├── package.json
-└── README.md
+└── vite.config.js
 ```
 
 ---
 
-## Quick Start Guide
+## 🚀 Getting Started
 
-### 1. Install Dependencies
+### 1. Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **npm**: v9.0.0 or higher
 
-Root application:
+### 2. Installation
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd Athena-Clone
+
+# Install root dependencies
 npm install
+
+# Install backend dependencies
+cd backend && npm install && cd ..
 ```
 
-Backend server:
+### 3. Development Workflow
+
+#### Run Backend & Frontend Concurrently:
 ```bash
-cd backend
-npm install
-cd ..
+npm run dev:all
+```
+- Backend starts at `http://127.0.0.1:3000`
+- Vite frontend starts at `http://localhost:5173`
+
+#### Run Electron Desktop Application:
+```bash
+npm run electron:dev
+```
+
+### 4. Running Tests & Quality Verification
+
+#### Run Backend Integration Tests:
+```bash
+npm test
+```
+*Executes all 12 end-to-end integration tests (Auth, Question Bank, Exam Blueprints, Candidate Lifecycle, Proctoring, Analytics, and Settings).*
+
+#### Run ESLint Checks:
+```bash
+npm run lint
+```
+
+#### Build Production Bundle:
+```bash
+npm run build
 ```
 
 ---
 
-### 2. Start the Backend Server
+## 🔐 Security & Integrity Model
 
-```bash
-cd backend
-npm start
-```
-*The backend starts at `http://localhost:3000`.*
-
----
-
-### 3. Start the Frontend & Electron Desktop App
-
-In **Terminal 1** (Vite development server):
-```bash
-npm run dev
-```
-
-In **Terminal 2** (Electron Desktop window):
-```bash
-npm run electron
-```
+1. **Server-Authoritative Evaluation**: Question answers (`correctAnswer`) remain strictly on the backend and are never transmitted to the candidate client during an active test.
+2. **Context Isolation**: The Electron renderer operates with `contextIsolation: true` and `nodeIntegration: false`, communicating exclusively via typed, allowlisted IPC channels in `preload.js`.
+3. **Atomic File Storage**: All persistence updates write to atomic temporary files (`.tmp`) before renaming, eliminating file corruption risks on unexpected shutdowns.
+4. **Proctoring Audit Trails**: Webcam and screen snapshots are timestamped and tagged by session ID, providing an immutable audit trail for test administrators.
 
 ---
 
-## Build & Quality Commands
-
-```bash
-npm run lint       # Run ESLint validation
-npm run build      # Compile production Vite bundle
-npm run preview    # Preview built application
-```
+## 📄 License
+MIT License. Built for secure institutional examination and skill evaluations.
