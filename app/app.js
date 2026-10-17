@@ -125,8 +125,11 @@ function createWindow(port = 3000) {
   // Prevent new windows
   electronWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
+  const isDevMode = !app.isPackaged && (process.argv.includes("--dev") || process.env.NODE_ENV === "development");
   const indexPath = path.join(import.meta.dirname, "../dist/index.html");
-  if (app.isPackaged || fs.existsSync(indexPath)) {
+  if (isDevMode) {
+    electronWindow.loadURL("http://localhost:5173");
+  } else if (app.isPackaged || fs.existsSync(indexPath)) {
     electronWindow.loadFile(indexPath);
   } else {
     electronWindow.loadURL("http://localhost:5173");
