@@ -185,7 +185,30 @@ app.post("/exam/answer", (req, res) => {
   });
 });
 
-// Get current session progress
+function buildSessionReview(session) {
+  const questions = readQuestions();
+  return questions.map((q) => {
+    const userAns = session.answers ? session.answers.find((a) => a.questionId === q.id) : null;
+    const attempted = userAns !== undefined && userAns !== null && userAns.selectedAnswer !== null;
+    const isCorrect = attempted ? Boolean(userAns.isCorrect) : false;
+    return {
+      questionId: q.id,
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      correctOptionText: q.options[q.correctAnswer] || "",
+      selectedAnswer: attempted ? userAns.selectedAnswer : null,
+      selectedOptionText: attempted ? (q.options[userAns.selectedAnswer] || "") : null,
+      isCorrect,
+      status: !attempted ? "skipped" : (isCorrect ? "correct" : "wrong"),
+      explanation: q.explanation || "No explanation provided.",
+      topic: q.topic || "General",
+      difficulty: q.difficulty || "medium",
+    };
+  });
+}
+
+// Get current session progress (includes review if submitted)
 app.get("/exam/session/:sessionId", (req, res) => {
   const sessions = readSessions();
 
@@ -197,10 +220,17 @@ app.get("/exam/session/:sessionId", (req, res) => {
     return res.status(404).json({ message: "Session not found" });
   }
 
+  if (session.status === "submitted") {
+    return res.json({
+      ...session,
+      review: buildSessionReview(session),
+    });
+  }
+
   res.json(session);
 });
 
-// Submit the whole exam
+// Submit the whole exam (returns result and full answer key with explanations)
 app.post("/exam/submit", (req, res) => {
   const { sessionId } = req.body;
 
@@ -223,6 +253,8 @@ app.post("/exam/submit", (req, res) => {
 
   saveSessions(sessions);
 
+  const review = buildSessionReview(session);
+
   res.json({
     message: "Exam submitted successfully",
     result: {
@@ -230,7 +262,22 @@ app.post("/exam/submit", (req, res) => {
       correct: session.correct,
       wrong: session.wrong,
     },
+    review,
   });
+});
+
+// Dedicated answer key & solution review endpoint
+app.get("/exam/session/:sessionId/review", (req, res) => {
+  const sessions = readSessions();
+  const session = sessions.find(
+    (item) => item.sessionId === req.params.sessionId
+  );
+
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  res.json(buildSessionReview(session));
 });
 
 // Get candidate session history

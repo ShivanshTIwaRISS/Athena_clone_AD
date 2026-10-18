@@ -484,34 +484,16 @@ export default function App() {
 
         {/* Stage 4: Results & Response Breakdown */}
         {stage === 'RESULTS' && (
-          <div>
-            <ExamResults
-              resultData={resultData}
-              sessionData={finalSessionData}
-              questionsList={questionsList}
-              timer={timer}
-              snapshotCount={snapshotCount}
-              screenSnapshotCount={screenSnapshotCount}
-              onRestart={handleRestartFlow}
-            />
-
-            <div className="d-flex justify-center gap-3 mt-4 mb-4">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleRestartFlow}
-              >
-                Take Another Assessment
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setStage('HISTORY')}
-              >
-                View Assessment History
-              </button>
-            </div>
-          </div>
+          <ExamResults
+            resultData={resultData}
+            sessionData={finalSessionData}
+            questionsList={questionsList}
+            timer={timer}
+            snapshotCount={snapshotCount}
+            screenSnapshotCount={screenSnapshotCount}
+            onRestart={handleRestartFlow}
+            onViewHistory={() => setStage('HISTORY')}
+          />
         )}
 
         {/* Stage 5: Candidate Attempt History */}
@@ -519,13 +501,23 @@ export default function App() {
           <AttemptHistory
             userId={userId}
             onNavigate={(target) => setStage(target)}
-            onReviewSession={(session) => {
-              setFinalSessionData(session);
-              setResultData({
-                attempted: session.attempted,
-                correct: session.correct,
-                wrong: session.wrong,
-              });
+            onReviewSession={async (session) => {
+              try {
+                const fullSession = await getSessionDetails(session.sessionId);
+                setFinalSessionData(fullSession);
+                setResultData({
+                  attempted: fullSession.attempted ?? session.attempted,
+                  correct: fullSession.correct ?? session.correct,
+                  wrong: fullSession.wrong ?? session.wrong,
+                });
+              } catch {
+                setFinalSessionData(session);
+                setResultData({
+                  attempted: session.attempted,
+                  correct: session.correct,
+                  wrong: session.wrong,
+                });
+              }
               setStage('RESULTS');
             }}
           />

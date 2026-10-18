@@ -130,7 +130,7 @@ function createWindow(port = 3000) {
     minWidth: 1100,
     minHeight: 700,
     title: "VEYRA – Smart Assessments. Seamless Execution.",
-    backgroundColor: "#0d1117",
+    backgroundColor: "#f8fafc",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     webPreferences: {
       devTools: !app.isPackaged,

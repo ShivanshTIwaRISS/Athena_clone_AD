@@ -179,3 +179,8 @@ export async function getSessions(userId) {
   const qs = userId ? `?userId=${encodeURIComponent(userId)}` : '';
   return request(`/exam/sessions${qs}`);
 }
+
+/** 9. GET /exam/session/:sessionId/review – Complete answer key with explanations */
+export async function getSessionReview(sessionId) {
+  return request(`/exam/session/${encodeURIComponent(sessionId)}/review`);
+}
