@@ -43,7 +43,8 @@ contextBridge.exposeInMainWorld('veyra', {
   setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
   getTheme: () => ipcRenderer.invoke('get-theme'),
 
-  // ── Backend Port ───────────────────────────────────────────────────────
+  // ── Backend API & Port ────────────────────────────────────────────────
+  apiRequest: (endpoint, options) => ipcRenderer.invoke('api-request', { endpoint, options }),
   getBackendPort: () => ipcRenderer.invoke('get-backend-port'),
   registerBackendPortListener: (callback) => {
     const fn = (event, port) => callback(port);

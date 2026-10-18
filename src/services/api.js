@@ -76,8 +76,21 @@ async function getPort() {
 
 /**
  * Unified JSON fetch helper with error handling.
+ * In Electron, delegates to window.veyra.apiRequest to run directly in Node.js,
+ * completely bypassing browser CORS, PNA, and file:// protocol restrictions.
  */
 async function request(endpoint, options = {}) {
+  const bridge = window.veyra;
+  if (bridge?.apiRequest) {
+    try {
+      return await bridge.apiRequest(endpoint, options);
+    } catch (err) {
+      console.warn(`[VEYRA] API IPC call failed for ${endpoint}:`, err.message);
+      throw err;
+    }
+  }
+
+  // Fallback for standalone browser dev mode
   const port = await getPort();
   const base = `http://127.0.0.1:${port}`;
   const url = `${base}${endpoint}`;

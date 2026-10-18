@@ -95,7 +95,8 @@ export default function App() {
       } catch (err) {
         console.warn('Could not preload questions yet:', err);
       }
-    } catch {
+    } catch (err) {
+      console.warn('[VEYRA] Backend health check failed:', err);
       setBackendOnline(false);
     }
   }, []);

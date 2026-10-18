@@ -132,7 +132,7 @@ function createWindow(port = 3000) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false, // needed for preload to import Node modules
-      webSecurity: true,
+      webSecurity: false,
     },
   });
 
@@ -316,6 +316,34 @@ ipcMain.handle("get-theme", () => {
 
 // Backend Port
 ipcMain.handle("get-backend-port", () => activeBackendPort);
+
+// Secure API Proxy to local backend (bypasses all browser CORS & file:// protocol restrictions)
+ipcMain.handle("api-request", async (_event, { endpoint, options = {} }) => {
+  const url = `http://127.0.0.1:${activeBackendPort}${endpoint}`;
+  try {
+    const res = await fetch(url, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      body: options.body
+        ? (typeof options.body === "string" ? options.body : JSON.stringify(options.body))
+        : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data?.message || `Request failed with status ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    console.error(`[VEYRA API IPC] Error at ${endpoint}:`, err.message);
+    throw err;
+  }
+});
 
 // App info
 ipcMain.handle("get-app-info", () => ({
