@@ -8,43 +8,69 @@
 let _resolvedPort = null;
 let _portResolvers = [];
 
+function setPort(port) {
+  _resolvedPort = Number(port) || 3000;
+  _portResolvers.forEach((r) => r(_resolvedPort));
+  _portResolvers = [];
+}
+
 /**
  * Initialise port resolution. Must be called once from App.jsx on mount.
- * Registers the IPC backend-port listener if running inside Electron.
+ * Registers IPC handlers if running inside Electron.
  */
-export function initBackendPort(defaultPort = 3000) {
-  // If already resolved, do nothing
-  if (_resolvedPort !== null) return;
+export async function initBackendPort(defaultPort = 3000) {
+  if (_resolvedPort !== null) return _resolvedPort;
 
   const bridge = window.veyra;
+  if (bridge?.getBackendPort) {
+    try {
+      const port = await bridge.getBackendPort();
+      if (port) {
+        setPort(port);
+        return port;
+      }
+    } catch (e) {
+      console.warn('[VEYRA] getBackendPort query failed:', e);
+    }
+  }
+
   if (bridge?.registerBackendPortListener) {
     bridge.registerBackendPortListener((port) => {
-      _resolvedPort = port;
-      // Flush any pending resolvers
-      _portResolvers.forEach((r) => r(port));
-      _portResolvers = [];
+      setPort(port);
     });
   } else {
     // Browser / plain dev mode: use the default
-    _resolvedPort = defaultPort;
-    _portResolvers.forEach((r) => r(defaultPort));
-    _portResolvers = [];
+    setPort(defaultPort);
   }
+
+  return _resolvedPort;
 }
 
 /** Returns a promise that resolves to the backend port number. */
-function getPort() {
-  if (_resolvedPort !== null) return Promise.resolve(_resolvedPort);
+async function getPort() {
+  if (_resolvedPort !== null) return _resolvedPort;
+
+  const bridge = window.veyra;
+  if (bridge?.getBackendPort) {
+    try {
+      const port = await bridge.getBackendPort();
+      if (port) {
+        setPort(port);
+        return _resolvedPort;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   return new Promise((resolve) => {
     _portResolvers.push(resolve);
-    // Safety: if port never arrives within 3s, fall back to 3000
+    // Safety: if port never arrives within 1.5s, fall back to 3000
     setTimeout(() => {
       if (_resolvedPort === null) {
-        _resolvedPort = 3000;
-        _portResolvers.forEach((r) => r(3000));
-        _portResolvers = [];
+        setPort(3000);
       }
-    }, 3000);
+    }, 1500);
   });
 }
 

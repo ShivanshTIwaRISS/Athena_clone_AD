@@ -1,1 +1,21 @@
-[]
+[
+  {
+    "sessionId": "session-1792309231344",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-18T07:40:31.344Z",
+    "submittedAt": "2026-10-18T07:40:31.350Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-18T07:40:31.347Z"
+      }
+    ]
+  }
+]

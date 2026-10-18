@@ -11,6 +11,7 @@ import { createServer } from "net";
 
 let electronWindow = null;
 let backendProcess = null;
+let activeBackendPort = 3000;
 let startTimestamp = null;
 let timerInterval = null;
 let cameraInterval = null;
@@ -50,6 +51,7 @@ async function findFreePort(preferred = 3000) {
 // ─── Backend Spawn ────────────────────────────────────────────────────────────
 async function startBackend() {
   const port = await findFreePort(3000);
+  activeBackendPort = port;
   const backendDir = app.isPackaged
     ? path.join(process.resourcesPath, "backend")
     : path.join(import.meta.dirname, "../backend");
@@ -83,13 +85,18 @@ async function startBackend() {
   });
 
   // Wait for backend to be ready
-  await new Promise((resolve) => setTimeout(resolve, 1200));
+  await new Promise((resolve) => setTimeout(resolve, 800));
   return port;
 }
 
 function stopBackend() {
+  isShuttingDown = true;
   if (backendProcess && !backendProcess.killed) {
-    backendProcess.kill("SIGTERM");
+    try {
+      backendProcess.kill("SIGTERM");
+    } catch {
+      // ignore
+    }
     backendProcess = null;
   }
 }
@@ -291,6 +298,9 @@ ipcMain.handle("set-theme", (_event, theme) => {
 ipcMain.handle("get-theme", () => {
   return { theme: nativeTheme.shouldUseDarkColors ? "dark" : "light" };
 });
+
+// Backend Port
+ipcMain.handle("get-backend-port", () => activeBackendPort);
 
 // App info
 ipcMain.handle("get-app-info", () => ({
