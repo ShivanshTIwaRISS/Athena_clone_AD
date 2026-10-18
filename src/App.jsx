@@ -102,14 +102,17 @@ export default function App() {
 
   // Initialise dynamic port from Electron IPC (or fall back to 3000 in browser)
   useEffect(() => {
-    initBackendPort(3000);
-  }, []);
-
-  useEffect(() => {
-    // Small delay to let port resolve before first health check
-    const t = setTimeout(() => verifyBackend(), 400);
-    const interval = setInterval(() => verifyBackend(), 15000);
-    return () => { clearTimeout(t); clearInterval(interval); };
+    let isMounted = true;
+    initBackendPort(3000).then(() => {
+      if (isMounted) verifyBackend();
+    });
+    // Fallback immediate check and periodic ping
+    verifyBackend();
+    const interval = setInterval(() => verifyBackend(), 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [verifyBackend]);
 
   /**

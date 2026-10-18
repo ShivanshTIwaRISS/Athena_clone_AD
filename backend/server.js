@@ -233,6 +233,12 @@ app.get("/exam/sessions", (req, res) => {
   res.json(sessions);
 });
 
-app.listen(PORT, () => {
-  console.log(`Exam backend running at http://localhost:${PORT}`);
+const HOST = "127.0.0.1";
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Exam backend running at http://${HOST}:${PORT}`);
+});
+
+server.on("error", (err) => {
+  console.error(`[VEYRA Backend Error] ${err.message}`);
+  process.exit(1);
 });

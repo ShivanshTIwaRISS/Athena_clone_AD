@@ -36,16 +36,31 @@ function isPortFree(port) {
   return new Promise((resolve) => {
     const server = createServer();
     server.once("error", () => resolve(false));
-    server.once("listening", () => { server.close(); resolve(true); });
-    server.listen(port, "127.0.0.1");
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, "0.0.0.0");
   });
 }
 
 async function findFreePort(preferred = 3000) {
-  for (let p = preferred; p < preferred + 20; p++) {
+  for (let p = preferred; p < preferred + 30; p++) {
     if (await isPortFree(p)) return p;
   }
   return preferred;
+}
+
+async function waitForBackendReady(port, retries = 25) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/`);
+      if (res.ok) return true;
+    } catch {
+      // not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return false;
 }
 
 // ─── Backend Spawn ────────────────────────────────────────────────────────────
@@ -84,8 +99,8 @@ async function startBackend() {
     }
   });
 
-  // Wait for backend to be ready
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  const ready = await waitForBackendReady(port);
+  console.log(`[VEYRA] Backend readiness on http://127.0.0.1:${port}: ${ready ? "READY" : "FAILED"}`);
   return port;
 }
 
