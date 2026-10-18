@@ -55,5 +55,24 @@
         "answeredAt": "2026-10-18T07:52:48.072Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792310524064",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-18T08:02:04.064Z",
+    "submittedAt": "2026-10-18T08:02:04.075Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-18T08:02:04.068Z"
+      }
+    ]
   }
 ]

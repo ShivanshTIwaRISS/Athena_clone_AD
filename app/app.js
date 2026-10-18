@@ -32,15 +32,21 @@ function getScreenSnapDir() {
 }
 
 // ─── Port Availability ────────────────────────────────────────────────────────
-function isPortFree(port) {
+function testHostPort(port, host) {
   return new Promise((resolve) => {
     const server = createServer();
     server.once("error", () => resolve(false));
     server.once("listening", () => {
       server.close(() => resolve(true));
     });
-    server.listen(port, "0.0.0.0");
+    server.listen(port, host);
   });
+}
+
+async function isPortFree(port) {
+  const freeLocal = await testHostPort(port, "127.0.0.1");
+  if (!freeLocal) return false;
+  return testHostPort(port, "0.0.0.0");
 }
 
 async function findFreePort(preferred = 3000) {
@@ -128,12 +134,17 @@ function createWindow(port = 3000) {
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     webPreferences: {
       devTools: !app.isPackaged,
-      preload: path.join(import.meta.dirname, "preload.js"),
+      preload: path.join(import.meta.dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false, // needed for preload to import Node modules
       webSecurity: false,
     },
+  });
+
+  // Forward renderer console to main terminal
+  electronWindow.webContents.on("console-message", (_event, level, message) => {
+    console.log(`[RENDERER] ${message}`);
   });
 
   // Prevent navigation to external URLs
