@@ -17,6 +17,8 @@ function formatTime(seconds) {
   return `${sec}s`;
 }
 
+const optLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
 // Pseudo-random option shuffling seeded by (sessionId + questionId)
 // Ensures randomized option order per candidate, while remaining stable during Back/Next navigation
 function shuffleOptions(options, seedKey) {
@@ -310,8 +312,6 @@ export default function ExamArena({
       setShowConfirm(false);
     }
   };
-
-  const optLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   return (
     <div className="exam-arena-container">

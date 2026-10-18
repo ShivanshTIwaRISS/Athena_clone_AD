@@ -695,5 +695,89 @@
         "answeredAt": "2026-10-18T11:28:43.581Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792323187022",
+    "userId": "student-101",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-18T11:33:07.022Z",
+    "submittedAt": null,
+    "status": "in-progress",
+    "attempted": 1,
+    "correct": 0,
+    "wrong": 1,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-18T11:33:10.458Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792323211960",
+    "userId": "student-101",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-18T11:33:31.960Z",
+    "submittedAt": null,
+    "status": "in-progress",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-18T11:33:33.950Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792323415894",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-18T11:36:55.894Z",
+    "submittedAt": "2026-10-18T11:36:55.901Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-18T11:36:55.898Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792323463618",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-18T11:37:43.618Z",
+    "submittedAt": "2026-10-18T11:37:43.625Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-18T11:37:43.621Z"
+      }
+    ]
   }
 ]

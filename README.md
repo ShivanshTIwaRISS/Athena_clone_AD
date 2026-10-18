@@ -1,25 +1,41 @@
 # VEYRA — Athena Examination & Proctoring Platform
 
 > **Smart Assessments. Seamless Execution.**  
-> A production-grade desktop assessment, anti-cheat proctoring, and automated examination platform built with **Electron**, **React**, and an authoritative **Node.js/Express** backend.
+> A production-grade desktop assessment, anti-cheat proctoring, and automated examination platform engineered with **Electron**, **React 19**, and an authoritative **Node.js/Express** backend.
 
 ---
 
-## 🌟 Candidate Journey & Core Features
+## 🌟 Candidate Journey & Core Capabilities
+
+```
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│ 1. Available Exams     │ ───► │ 2. Pre-Exam Setup      │ ───► │ 3. Locked Exam Arena   │
+│ • Catalog & Guidelines │      │ • Webcam Test & Agree  │      │ • Kiosk Lockdown       │
+│ • Candidate Identity   │      │ • Hardware Check       │      │ • Auto-save & Proctor  │
+└────────────────────────┘      └────────────────────────┘      └───────────┬────────────┘
+                                                                            │
+                                                                            ▼
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│ 6. Attempt History     │ ◄─── │ 5. Answer Key Review   │ ◄─── │ 4. Final Submission    │
+│ • Persistent Records   │      │ • Verified Solutions   │      │ • Telemetry Summary    │
+│ • Timestamped Audits   │      │ • Step-by-Step Reason  │      │ • Pass / Fail Verdict  │
+└────────────────────────┘      └────────────────────────┘      └────────────────────────┘
+```
 
 ### 1. Available Assessments Portal
-- Browse scheduled and open assessments with question counts, time limits, and benchmarks.
-- View real-time backend API connectivity and candidate attempt history.
+- Browse scheduled and open assessments with subject tags, question counts, time limits, and passing benchmarks.
+- Live backend API connectivity badge (`Online` / `Offline`) dynamically discovered via Electron IPC.
+- Instant access to candidate examination history.
 
 ### 2. Pre-Examination Hardware Verification
-- Candidate ID & Full Name verification.
-- Live camera feed initialization and proctoring hardware health check.
+- Candidate ID & Full Name validation (persisted in local storage).
+- Live camera stream initialization and hardware readiness check.
 - Mandatory fullscreen security agreement and exam policy guidelines modal.
 
-### 3. Timed Examination Arena & Proctoring Lockdown
-- **Randomized Option Shuffling**: Every MCQ question dynamically shuffles option positions (A, B, C, D) per candidate and session to prevent collusion, while transparently preserving server-authoritative grading.
-- **🔖 Mark for Review**: Candidates can bookmark questions to review later. Highlighted with a distinct badge and star (`★`) in the question palette and summarized in the submission modal.
-- **Non-Linear Question Palette**: Real-time counters and color indicators for Answered (Green), Unanswered (Gray), and Marked for Review (Purple).
+### 3. Timed Examination Arena
+- **Randomized Option Shuffling**: Options (A, B, C, D) are randomly permuted per question and candidate session to prevent collusion and screen-peeking, while transparently preserving 100% accurate server-authoritative evaluation.
+- **🔖 Mark for Review**: Candidates can bookmark questions to revisit later. Highlighted with a distinct badge and star (`★`) in the question palette and summarized in the submission modal.
+- **Non-Linear Question Palette**: Real-time status indicators for Answered (Green), Unanswered (Gray), and Marked for Review (Purple).
 - **Auto-Save Resilience**: Answer selections are immediately auto-saved and synchronized to the local backend.
 - **Automated Proctoring**:
   - **Camera Snapshots**: Captured automatically every 5 seconds.
@@ -32,7 +48,7 @@
 - **Clipboard & Context Menu Lock**: Blocks `Cmd+C`, `Cmd+V`, and `Cmd+X` to prevent copy-pasting questions to external AI tools (ChatGPT, Claude, etc.), and disables right-click context menus.
 - **Focus Loss & Tab Switch Detection**: Detects window blur, tab switching, and app switching in real time.
 - **Controlled Force Quit (1 Flag Warning)**:
-  - If a user attempts to close or quit via `Cmd+Q` / `Cmd+W`, the system logs **1 Proctoring Violation Flag** against the session.
+  - If a candidate attempts to close or quit via `Cmd+Q` / `Cmd+W` or window close, the system logs **1 Proctoring Violation Flag** against the session.
   - Displays a warning confirmation dialog: `Resume Exam` or `Force Quit Anyway`.
   - Does not trap the candidate indefinitely — if confirmed, safely stops the session and exits cleanly.
 
@@ -49,11 +65,12 @@
 
 ## 🎨 Visual Identity: White, Blue, Green & Yellow Light Theme
 
-Designed with a clean, high-contrast palette:
+Designed with a clean, modern, high-contrast palette:
 - **Base Surfaces & Cards**: Crisp Pure White (`#ffffff`), Soft Slate (`#f8fafc`), Clean Borders (`#e2e8f0`).
 - **Primary Brand & Actions**: Royal Blue (`#2563eb`, `#3b82f6`, `#eff6ff`).
 - **Integrity & Correctness**: Emerald Green (`#16a34a`, `#10b981`, `#f0fdf4`).
 - **Highlights & Warnings**: Amber Yellow (`#d97706`, `#f59e0b`, `#fffbeb`).
+- **Marked for Review**: Royal Purple (`#7c3aed`, `#8b5cf6`, `#f5f3ff`).
 - **Typography**: Deep readable Slate (`#0f172a` primary, `#334155` secondary, `#64748b` muted).
 
 ---
@@ -83,7 +100,7 @@ Athena-Clone/
 │   │   ├── questions.json     # MCQ Question bank with server-side solutions
 │   │   └── sessions.json      # Exam session records and proctoring audit logs
 │   ├── tests/
-│   │   └── run-tests.js       # Integration test runner
+│   │   └── run-tests.js       # Integration test runner (8 end-to-end tests)
 │   └── server.js              # Express REST API (Questions, Sessions, Flags, Review)
 ├── proctoring_data/           # Dedicated directory for proctoring evidence
 │   ├── camera_snaps/          # Automated webcam snapshots (*-cam.jpg)
