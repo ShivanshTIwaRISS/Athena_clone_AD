@@ -159,6 +159,7 @@
   border-radius: var(--r-full);
   font-size: 13px;
   box-shadow: 0 1px 4px rgba(37,99,235,0.08);
+  transition: all var(--tx);
 }
 .timer-label { color: var(--text-muted); font-size: 11px; font-weight: 600; }
 .timer-value {
@@ -166,6 +167,25 @@
   color: var(--brand-blue);
   font-weight: 700;
   font-size: 13.5px;
+}
+.timer-badge.timer-warning {
+  background: var(--brand-yellow-soft);
+  border-color: var(--brand-yellow-border);
+}
+.timer-badge.timer-warning .timer-value {
+  color: var(--brand-yellow-dim);
+}
+.timer-badge.timer-urgent {
+  background: var(--brand-red-soft);
+  border-color: var(--brand-red-border);
+  animation: timer-pulse 1.8s infinite;
+}
+.timer-badge.timer-urgent .timer-value {
+  color: var(--brand-red);
+}
+@keyframes timer-pulse {
+  0%, 100% { box-shadow: 0 1px 4px rgba(239,68,68,0.15); }
+  50% { box-shadow: 0 1px 12px rgba(239,68,68,0.35); }
 }
 
 /* Backend status badge */

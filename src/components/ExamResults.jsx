@@ -90,8 +90,24 @@ export default function ExamResults({
           <div className="result-pct-sub">Score</div>
         </div>
 
-        <div className="results-verdict">
-          {passed ? '🎉 Assessment Passed' : '📚 Assessment Completed'}
+        <div className="results-verdict" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          {passed ? (
+            <>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--brand-green)' }}>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              Assessment Passed
+            </>
+          ) : (
+            <>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--brand-blue)' }}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              Assessment Completed
+            </>
+          )}
         </div>
         <p className="results-tagline">
           {passed
@@ -109,17 +125,30 @@ export default function ExamResults({
       {/* ── 2. Metric Score Cards ──────────────────────────────────── */}
       <div className="result-score-cards">
         <div className="score-card card-correct">
-          <div className="score-card-icon">✓</div>
+          <div className="score-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
           <div className="score-card-val">{correctCount}</div>
           <div className="score-card-lbl">Correct Answers</div>
         </div>
         <div className="score-card card-wrong">
-          <div className="score-card-icon">✗</div>
+          <div className="score-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </div>
           <div className="score-card-val">{wrongCount}</div>
           <div className="score-card-lbl">Incorrect Answers</div>
         </div>
         <div className="score-card card-skipped">
-          <div className="score-card-icon">—</div>
+          <div className="score-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </div>
           <div className="score-card-val">{skippedCount}</div>
           <div className="score-card-lbl">Skipped / Unattempted</div>
         </div>
@@ -137,7 +166,7 @@ export default function ExamResults({
         </div>
         <div className="meta-card">
           <span className="meta-card-label">Time Elapsed</span>
-          <span className="meta-card-value">{formatTime(timer)}</span>
+          <span className="meta-card-value">{formatTime(timer)} (of 30m)</span>
         </div>
         <div className="meta-card">
           <span className="meta-card-label">Proctor Telemetry</span>
@@ -147,10 +176,24 @@ export default function ExamResults({
         </div>
         <div className="meta-card">
           <span className="meta-card-label">Proctoring Flags</span>
-          <span className={`meta-card-value ${(sessionData?.flagCount || sessionData?.flags?.length) ? 'text-amber font-bold' : 'text-green font-bold'}`}>
-            {(sessionData?.flagCount || sessionData?.flags?.length || 0) === 0
-              ? '✓ Clean (0 Flags)'
-              : `⚠️ ${sessionData?.flagCount || sessionData?.flags?.length} Flag(s)`}
+          <span className={`meta-card-value ${(sessionData?.flagCount || sessionData?.flags?.length) ? 'text-amber font-bold' : 'text-green font-bold'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {(sessionData?.flagCount || sessionData?.flags?.length || 0) === 0 ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Clean (0 Flags)
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                {sessionData?.flagCount || sessionData?.flags?.length} Flag(s)
+              </>
+            )}
           </span>
         </div>
       </div>
@@ -334,7 +377,13 @@ export default function ExamResults({
                 {item.explanation && (
                   <div className="q-solution-box">
                     <div className="solution-title">
-                      <span className="solution-icon">💡</span>
+                      <span className="solution-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                      </span>
                       <span>Explanation & Key Concept</span>
                     </div>
                     <p className="solution-text">{item.explanation}</p>

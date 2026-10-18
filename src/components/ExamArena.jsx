@@ -17,6 +17,15 @@ function formatTime(seconds) {
   return `${sec}s`;
 }
 
+const EXAM_DURATION_SECONDS = 1800; // 30 minutes
+
+function formatCountdown(remainingSeconds) {
+  const s = Math.max(0, Math.floor(Number(remainingSeconds) || 0));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+}
+
 const optLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 // Pseudo-random option shuffling seeded by (sessionId + questionId)
@@ -290,7 +299,7 @@ export default function ExamArena({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!sessionId) return;
     setSubmitting(true);
     setErrorMsg(null);
@@ -311,7 +320,17 @@ export default function ExamArena({
       setSubmitting(false);
       setShowConfirm(false);
     }
-  };
+  }, [sessionId, sessionData, draftAnswers, onExamSubmitted]);
+
+  const remainingSeconds = Math.max(0, EXAM_DURATION_SECONDS - Math.floor(Number(timer) || 0));
+
+  // Auto-submit when 30-minute exam timer expires
+  useEffect(() => {
+    const elapsed = Math.floor(Number(timer) || 0);
+    if (elapsed >= EXAM_DURATION_SECONDS && !submitting && sessionId) {
+      handleSubmit();
+    }
+  }, [timer, submitting, sessionId, handleSubmit]);
 
   return (
     <div className="exam-arena-container">
@@ -319,8 +338,12 @@ export default function ExamArena({
       <div className="exam-main-area">
         {/* Real-time Proctoring Violation Banner */}
         {activeViolation && (
-          <div className="alert alert-warning animate-slide-up" style={{ borderLeft: '4px solid var(--brand-yellow)' }}>
-            <span style={{ fontSize: 18 }}>⚠️</span>
+          <div className="alert alert-warning animate-slide-up" style={{ borderLeft: '4px solid var(--brand-yellow)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--brand-yellow-dim)', marginTop: 2, flexShrink: 0 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: 13 }}>
                 Proctoring Flag #{flags.length} Logged ({activeViolation.timestamp})
@@ -356,7 +379,16 @@ export default function ExamArena({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="q-num-tag">Question {currentIndex + 1} of {totalCount}</span>
               <span className={`q-status-tag ${selectedOption !== null ? 'q-status-answered' : 'q-status-unanswered'}`}>
-                {selectedOption !== null ? `✓ Option ${selectedLetter || ''} selected` : 'Not answered'}
+                {selectedOption !== null ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Option {selectedLetter || ''} selected
+                  </>
+                ) : (
+                  'Not answered'
+                )}
               </span>
             </div>
 
@@ -366,8 +398,12 @@ export default function ExamArena({
               className={`btn btn-sm ${isCurrentMarked ? 'btn-marked-active' : 'btn-outline'}`}
               onClick={() => currentMeta?.id && toggleMarkForReview(currentMeta.id)}
               title="Bookmark question to review before final submission"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              {isCurrentMarked ? '★ Marked for Review' : '☆ Mark for Review'}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill={isCurrentMarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M19 21l-7-5-7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>{isCurrentMarked ? 'Marked for Review' : 'Mark for Review'}</span>
             </button>
           </div>
 
@@ -396,7 +432,11 @@ export default function ExamArena({
                       <span className="option-letter">{optLetters[i] || i + 1}</span>
                       <span className="option-text">{item.text}</span>
                       {isSelected && (
-                        <span className="option-check">✓</span>
+                        <span className="option-check">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </span>
                       )}
                     </div>
                   );
@@ -405,14 +445,17 @@ export default function ExamArena({
 
               {/* Auto-save feedback */}
               {saveStatus === 'saving' && (
-                <div className="alert alert-info" style={{ marginTop: 12 }}>
+                <div className="alert alert-info" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span className="spinner" style={{ width: 13, height: 13 }} />
                   <span>Saving answer…</span>
                 </div>
               )}
               {saveStatus === 'saved' && (
-                <div className="alert alert-success" style={{ marginTop: 12 }}>
-                  ✓ Answer auto-saved — you can change your selection at any time.
+                <div className="alert alert-success" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Answer auto-saved — you can change your selection at any time.</span>
                 </div>
               )}
             </>
@@ -427,8 +470,12 @@ export default function ExamArena({
               className="btn btn-outline"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex((p) => Math.max(0, p - 1))}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              ← Previous
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Previous
             </button>
             <span className="exam-nav-center">
               {answeredCount} answered · {markedCount > 0 ? `${markedCount} marked · ` : ''}{totalCount - answeredCount} remaining
@@ -438,8 +485,12 @@ export default function ExamArena({
               className="btn btn-outline"
               disabled={currentIndex === totalCount - 1}
               onClick={() => setCurrentIndex((p) => Math.min(totalCount - 1, p + 1))}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              Next →
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -451,8 +502,13 @@ export default function ExamArena({
             className="btn btn-outline btn-sm"
             onClick={syncSession}
             disabled={syncing}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            {syncing ? 'Syncing…' : '↻ Sync'}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            {syncing ? 'Syncing…' : 'Sync'}
           </button>
           <button
             type="button"
@@ -483,7 +539,12 @@ export default function ExamArena({
           <div className="sidebar-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Question Palette</span>
             {markedCount > 0 && (
-              <span className="marked-count-badge">★ {markedCount}</span>
+              <span className="marked-count-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 21l-7-5-7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                </svg>
+                {markedCount}
+              </span>
             )}
           </div>
           <div className="question-palette">
@@ -501,7 +562,13 @@ export default function ExamArena({
                   title={`Q${i + 1}${isAnswered ? ' (Answered)' : ''}${isMarked ? ' (Marked for Review)' : ''}`}
                 >
                   {i + 1}
-                  {isMarked && <span className="palette-star">★</span>}
+                  {isMarked && (
+                    <span className="palette-star">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21l-7-5-7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                      </svg>
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -527,6 +594,16 @@ export default function ExamArena({
           </div>
           <div className="proctor-stats" style={{ marginTop: 10 }}>
             <div className="proctor-stat-row">
+              <span className="proctor-stat-label">Time remaining</span>
+              <span className={`proctor-stat-value ${remainingSeconds <= 300 ? 'text-danger font-bold' : ''}`}>
+                {formatCountdown(remainingSeconds)} (of 30m)
+              </span>
+            </div>
+            <div className="proctor-stat-row">
+              <span className="proctor-stat-label">Elapsed time</span>
+              <span className="proctor-stat-value">{formatTime(timer)}</span>
+            </div>
+            <div className="proctor-stat-row">
               <span className="proctor-stat-label">Webcam photos</span>
               <span className="proctor-stat-value">{snapshotCount} saved</span>
             </div>
@@ -535,13 +612,25 @@ export default function ExamArena({
               <span className="proctor-stat-value">{screenSnapshotCount} saved</span>
             </div>
             <div className="proctor-stat-row">
-              <span className="proctor-stat-label">Elapsed time</span>
-              <span className="proctor-stat-value">{formatTime(timer)}</span>
-            </div>
-            <div className="proctor-stat-row">
               <span className="proctor-stat-label">Proctoring flags</span>
-              <span className={`proctor-stat-value ${flags.length > 0 ? 'text-amber' : 'text-green'}`}>
-                {flags.length === 0 ? '0 (Clean)' : `⚠️ ${flags.length} flag${flags.length > 1 ? 's' : ''}`}
+              <span className={`proctor-stat-value ${flags.length > 0 ? 'text-amber' : 'text-green'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {flags.length === 0 ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    0 (Clean)
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    {flags.length} flag{flags.length > 1 ? 's' : ''}
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -549,8 +638,14 @@ export default function ExamArena({
 
         {/* Rules */}
         <div className="sidebar-card">
-          <button type="button" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onOpenRules}>
-            📋 View Rules
+          <button type="button" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6 }} onClick={onOpenRules}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+            View Assessment Rules
           </button>
         </div>
       </div>
@@ -584,20 +679,33 @@ export default function ExamArena({
               </div>
 
               {markedCount > 0 && (
-                <div className="alert alert-info" style={{ marginBottom: 10 }}>
-                  ★ You have <strong>{markedCount} question{markedCount > 1 ? 's' : ''}</strong> marked for review.
+                <div className="alert alert-info" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21l-7-5-7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  <span>You have <strong>{markedCount} question{markedCount > 1 ? 's' : ''}</strong> marked for review.</span>
                 </div>
               )}
 
               {totalCount - answeredCount > 0 && (
-                <div className="alert alert-warning" style={{ marginBottom: 10 }}>
-                  ⚠ You have {totalCount - answeredCount} unanswered question{totalCount - answeredCount > 1 ? 's' : ''}. Submission is permanent.
+                <div className="alert alert-warning" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span>You have {totalCount - answeredCount} unanswered question{totalCount - answeredCount > 1 ? 's' : ''}. Submission is permanent.</span>
                 </div>
               )}
 
               {flags.length > 0 && (
-                <div className="alert alert-error" style={{ marginBottom: 10 }}>
-                  ⚠️ {flags.length} proctoring flag{flags.length > 1 ? 's were' : ' was'} logged during this session.
+                <div className="alert alert-error" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <span>{flags.length} proctoring flag{flags.length > 1 ? 's were' : ' was'} logged during this session.</span>
                 </div>
               )}
             </div>

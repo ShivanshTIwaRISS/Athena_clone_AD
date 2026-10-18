@@ -1,14 +1,6 @@
 // src/components/Header.jsx
 import PropTypes from 'prop-types';
 
-function formatTime(seconds) {
-  const s = Math.floor(Number(seconds) || 0);
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  if (m > 0) return `${m}m ${sec.toString().padStart(2, '0')}s`;
-  return `${sec}s`;
-}
-
 const STAGE_LABELS = {
   AVAILABLE_EXAMS: 'Available Assessments',
   SETUP:           'Pre-Exam Verification',
@@ -16,6 +8,15 @@ const STAGE_LABELS = {
   RESULTS:         'Completed',
   HISTORY:         'Attempt History',
 };
+
+const EXAM_DURATION_SECONDS = 1800; // 30 minutes
+
+function formatCountdown(remainingSeconds) {
+  const s = Math.max(0, Math.floor(Number(remainingSeconds) || 0));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+}
 
 export default function Header({
   stage,
@@ -76,18 +77,31 @@ export default function Header({
         )}
       </div>
 
-      {/* ── Centre: Live timer during exam */}
+      {/* ── Centre: 30-Minute Live Countdown Timer during exam */}
       <div className="header-center">
-        {isExam && (
-          <div className="timer-badge" title="Elapsed exam time">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span className="timer-label">Elapsed</span>
-            <span className="timer-value">{formatTime(timer)}</span>
-          </div>
-        )}
+        {isExam && (() => {
+          const elapsed = Math.floor(Number(timer) || 0);
+          const remaining = Math.max(0, EXAM_DURATION_SECONDS - elapsed);
+          const isUrgent = remaining <= 300 && remaining > 0; // last 5 mins
+          const isWarning = remaining <= 600 && remaining > 300; // last 10 mins
+          const isExpired = remaining === 0;
+
+          return (
+            <div
+              className={`timer-badge ${isUrgent || isExpired ? 'timer-urgent' : isWarning ? 'timer-warning' : ''}`}
+              title={`Exam Duration: 30 minutes. ${remaining > 0 ? `${formatCountdown(remaining)} remaining` : 'Time expired'}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span className="timer-label">Time Remaining</span>
+              <span className="timer-value">
+                {isExpired ? '00:00 (Time Up)' : formatCountdown(remaining)}
+              </span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Right: Status + Candidate + Rules */}

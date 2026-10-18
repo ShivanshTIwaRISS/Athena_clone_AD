@@ -449,8 +449,12 @@ export default function App() {
                 type="button"
                 className="btn btn-outline btn-sm"
                 onClick={() => setStage('AVAILABLE_EXAMS')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                ← Back to Available Assessments
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Back to Available Assessments
               </button>
               {selectedExam && (
                 <span className="badge-pill badge-neutral">

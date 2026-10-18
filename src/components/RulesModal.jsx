@@ -6,7 +6,7 @@ const RULES = [
   'Your webcam must remain enabled and clearly visible throughout.',
   'Automated snapshots of your webcam and exam window are recorded periodically.',
   'Do not use external assistance, notes, or open unauthorized applications.',
-  'Click "Submit Exam" when finished, or the exam auto-submits when time expires.',
+  'Assessment duration is 30 minutes with a live countdown timer. Click "Submit Exam" when finished, or the session will auto-submit when the 30-minute limit expires.',
   'All proctoring data is stored locally and securely on this machine only.',
 ];
 

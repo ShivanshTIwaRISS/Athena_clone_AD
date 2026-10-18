@@ -30,8 +30,20 @@ export default function AvailableExams({
         <div className="hero-stats-row">
           <div className="hero-stat-card">
             <span className="stat-label">System Status</span>
-            <span className={`stat-value ${backendOnline ? 'text-green' : 'text-amber'}`}>
-              {backendOnline ? '✓ Online' : '⚠ Connecting…'}
+            <span className={`stat-value ${backendOnline ? 'text-green' : 'text-amber'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {backendOnline ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Online
+                </>
+              ) : (
+                <>
+                  <span className="spinner" style={{ width: 11, height: 11 }} />
+                  Connecting…
+                </>
+              )}
             </span>
           </div>
           <div className="hero-stat-card">
@@ -93,11 +105,46 @@ export default function AvailableExams({
 
           <div className="exam-features-list">
             {[
-              ['📹', 'Webcam Snapshot Telemetry'],
-              ['🖥️', 'Window Integrity Capture'],
-              ['💾', 'Real-time Auto-Save'],
-              ['📊', 'Instant Scorecard & Review'],
-            ].map(([icon, label]) => (
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="23 7 16 12 23 17 23 7" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  </svg>
+                ),
+                label: 'Webcam Snapshot Telemetry',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                ),
+                label: 'Window Integrity Capture',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                ),
+                label: 'Real-time Auto-Save',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                  </svg>
+                ),
+                label: 'Instant Scorecard & Review',
+              },
+            ].map(({ icon, label }) => (
               <div key={label} className="feature-pill">
                 <span className="feature-icon">{icon}</span>
                 <span>{label}</span>
@@ -153,7 +200,13 @@ export default function AvailableExams({
 
       {/* ── Footer tip */}
       <div className="exam-info-footer-card">
-        <div className="info-icon-box">💡</div>
+        <div className="info-icon-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        </div>
         <div className="info-text-box">
           <h4>Candidate Preparation Note</h4>
           <p>
