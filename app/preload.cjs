@@ -17,6 +17,16 @@ contextBridge.exposeInMainWorld('veyra', {
   startProctoring: (opts) => ipcRenderer.invoke('start-proctoring', opts || {}),
   stopProctoring: () => ipcRenderer.invoke('stop-proctoring'),
 
+  // ── Lockdown & Anti-Cheat ───────────────────────────────────────────────
+  enterExamLockdown: () => ipcRenderer.invoke('enter-exam-lockdown'),
+  exitExamLockdown: () => ipcRenderer.invoke('exit-exam-lockdown'),
+  registerProctorViolationListener: (callback) => {
+    const fn = (event, violation) => callback(violation);
+    ipcRenderer.on('proctor-violation', fn);
+    return () => ipcRenderer.removeListener('proctor-violation', fn);
+  },
+  openSnapsFolder: (type) => ipcRenderer.invoke('open-snaps-folder', type),
+
   // ── Camera ─────────────────────────────────────────────────────────────
   registerCameraSnapListener: (callback) => {
     const fn = () => callback();

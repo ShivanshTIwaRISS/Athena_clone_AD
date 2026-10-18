@@ -142,7 +142,15 @@ export default function ExamResults({
         <div className="meta-card">
           <span className="meta-card-label">Proctor Telemetry</span>
           <span className="meta-card-value">
-            {snapshotCount} camera snaps{screenSnapshotCount > 0 ? ` · ${screenSnapshotCount} screen` : ''}
+            {snapshotCount} cam · {screenSnapshotCount} screen
+          </span>
+        </div>
+        <div className="meta-card">
+          <span className="meta-card-label">Proctoring Flags</span>
+          <span className={`meta-card-value ${(sessionData?.flagCount || sessionData?.flags?.length) ? 'text-amber font-bold' : 'text-green font-bold'}`}>
+            {(sessionData?.flagCount || sessionData?.flags?.length || 0) === 0
+              ? '✓ Clean (0 Flags)'
+              : `⚠️ ${sessionData?.flagCount || sessionData?.flags?.length} Flag(s)`}
           </span>
         </div>
       </div>

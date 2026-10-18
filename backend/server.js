@@ -72,6 +72,8 @@ app.post("/exam/start", (req, res) => {
     attempted: 0,
     correct: 0,
     wrong: 0,
+    flagCount: 0,
+    flags: [],
     answers: [],
   };
 
@@ -182,6 +184,44 @@ app.post("/exam/answer", (req, res) => {
     attempted: session.attempted,
     correct: session.correct,
     wrong: session.wrong,
+  });
+});
+
+// Record a proctoring flag / violation (window blur, tab switch, shortcut abuse)
+app.post("/exam/flag", (req, res) => {
+  const { sessionId, type, reason, details } = req.body;
+
+  if (!sessionId) {
+    return res.status(400).json({ message: "sessionId is required" });
+  }
+
+  const sessions = readSessions();
+  const session = sessions.find((item) => item.sessionId === sessionId);
+
+  if (!session) {
+    return res.status(404).json({ message: "Session not found" });
+  }
+
+  if (!Array.isArray(session.flags)) {
+    session.flags = [];
+  }
+
+  const flagEntry = {
+    flagId: `flag-${Date.now()}`,
+    type: type || "SUSPICIOUS_ACTIVITY",
+    reason: reason || "Proctoring violation detected",
+    details: details || null,
+    timestamp: new Date().toISOString(),
+  };
+
+  session.flags.push(flagEntry);
+  session.flagCount = session.flags.length;
+  saveSessions(sessions);
+
+  res.json({
+    message: "Proctoring flag logged",
+    flagCount: session.flagCount,
+    flag: flagEntry,
   });
 });
 

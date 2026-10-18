@@ -224,6 +224,13 @@ export default function App() {
    */
   const stopProctoringFlow = useCallback(() => {
     const bridge = window.veyra || window.athena;
+    if (bridge?.exitExamLockdown) {
+      try {
+        bridge.exitExamLockdown();
+      } catch (err) {
+        console.warn('Failed to exit lockdown:', err);
+      }
+    }
     if (bridge?.stopProctoring || bridge?.stopProctoringOnMain) {
       const fn = bridge.stopProctoring || bridge.stopProctoringOnMain;
       try {
@@ -343,7 +350,14 @@ export default function App() {
         saveVideoScreenShots();
       }, 1000);
 
-      // 4. Transition to Exam Arena
+      // 4. Engage Full Window Lockdown & Transition to Exam Arena
+      if (bridge?.enterExamLockdown) {
+        try {
+          bridge.enterExamLockdown();
+        } catch (err) {
+          console.warn('Failed to enter lockdown:', err);
+        }
+      }
       setStage('EXAM');
     } catch (err) {
       console.error('Error starting examination:', err);
@@ -476,7 +490,6 @@ export default function App() {
             timer={timer}
             snapshotCount={snapshotCount}
             screenSnapshotCount={screenSnapshotCount}
-            onCaptureManualSnapshot={saveVideoScreenShots}
             onExamSubmitted={handleExamSubmitted}
             onOpenRules={() => setRulesOpen(true)}
           />

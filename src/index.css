@@ -1,5 +1,5 @@
 /* src/index.css — VEYRA Premium Light Theme Design Tokens */
-/* Major palette: White (clean background/cards), Blue (brand/actions), Green (success/correct/accuracy), Yellow (highlights/warnings/skipped) */
+/* Palette: White (surfaces/cards), Blue (brand/primary/actions), Green (success/correct/accuracy), Yellow (highlights/warnings/unanswered) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
@@ -29,7 +29,7 @@
   --brand-red-soft:    #fff1f2;
   --brand-red-border:  #fecdd3;
 
-  /* Clean Modern Light Backgrounds */
+  /* Crisp Light Backgrounds */
   --bg-base:    #f8fafc;
   --bg-surface: #ffffff;
   --bg-card:    #ffffff;
@@ -68,9 +68,9 @@
   --r-2xl: 24px;
   --r-full: 9999px;
 
-  /* Clean Modern Shadows */
+  /* Clean Modern Light Shadows */
   --shadow-card: 0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
-  --shadow-card-hover: 0 4px 12px rgba(15,23,42,0.08), 0 12px 28px rgba(15,23,42,0.06);
+  --shadow-card-hover: 0 4px 14px rgba(15,23,42,0.08), 0 12px 28px rgba(15,23,42,0.05);
   --shadow-glow-blue:   0 4px 16px rgba(37,99,235,0.18);
   --shadow-glow-green:  0 4px 16px rgba(22,163,74,0.18);
   --shadow-glow-yellow: 0 4px 16px rgba(217,119,6,0.18);

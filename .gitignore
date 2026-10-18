@@ -7,4 +7,5 @@ release/
 !.env.example
 app/user-camera-snap/
 app/user-screen-snap/
+proctoring_data/**/*.jpg
 

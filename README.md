@@ -1,94 +1,107 @@
-# VEYRA
+# VEYRA — Athena Examination & Proctoring Platform
 
 > **Smart Assessments. Seamless Execution.**  
-> A desktop-first examination, assessment, and proctoring platform.
-
-VEYRA is an institutional desktop assessment environment engineered with **Electron**, **React**, and an authoritative **Node.js/Express** backend. It features the **Green, Blue, and White** visual identity, delivering examination integrity, synchronized proctoring, and a candidate testing arena.
+> A production-grade desktop assessment, anti-cheat proctoring, and automated examination platform built with **Electron**, **React**, and an authoritative **Node.js/Express** backend.
 
 ---
 
-## 🌟 Candidate Journey & Key Features
+## 🌟 Candidate Journey & Core Features
 
-### 1. Available Examinations Portal
-- Review available examinations with subject, question count, duration, passing benchmark, and proctoring rigor.
-- View instructions and examination prerequisites before initiating a session.
-- Seamless navigation to candidate attempt history.
+### 1. Available Assessments Portal
+- Browse scheduled and open assessments with question counts, time limits, and benchmarks.
+- View real-time backend API connectivity and candidate attempt history.
 
-### 2. Pre-Examination Verification & Readiness Checklist
-- Verify candidate Student ID and Full Name.
-- Live camera hardware preview and frame extraction verification.
-- Audio and network connectivity health check.
-- Mandatory fullscreen security agreement and exam rules review dialog.
+### 2. Pre-Examination Hardware Verification
+- Candidate ID & Full Name verification.
+- Live camera feed initialization and proctoring hardware health check.
+- Mandatory fullscreen security agreement and exam policy guidelines modal.
 
-### 3. Timed Proctored Examination Arena
-- High-readability MCQ workspace with clear option selectors and responsive typography.
-- Synchronized elapsed timer with warning color shifts.
-- Non-linear question palette navigation with answered, unanswered, and flagged status filters.
-- Real-time auto-saving on answer selection synced with the backend.
-- Proctoring sidebar featuring live webcam feed, proctoring state indicator, and webcam/screen capture counters.
-- Final submission confirmation modal preventing accidental submission with unanswered question warnings.
-- Automatic exam submission on timer expiry.
+### 3. Timed Examination Arena & Proctoring Lockdown
+- **Randomized Option Shuffling**: Every MCQ question dynamically shuffles option positions (A, B, C, D) per candidate and session to prevent collusion, while transparently preserving server-authoritative grading.
+- **🔖 Mark for Review**: Candidates can bookmark questions to review later. Highlighted with a distinct badge and star (`★`) in the question palette and summarized in the submission modal.
+- **Non-Linear Question Palette**: Real-time counters and color indicators for Answered (Green), Unanswered (Gray), and Marked for Review (Purple).
+- **Auto-Save Resilience**: Answer selections are immediately auto-saved and synchronized to the local backend.
+- **Automated Proctoring**:
+  - **Camera Snapshots**: Captured automatically every 5 seconds.
+  - **Screen Captures**: Captured automatically every 10 seconds.
+  - **Secure Storage**: Stored privately in `proctoring_data/camera_snaps` and `proctoring_data/screen_snaps` in the project root. Snapshots are hidden from the candidate UI to prevent tampering.
 
-### 4. Comprehensive Scorecard & Question Review
-- Accuracy score percentage, passed / retake benchmarks, and timing summary.
-- Proctoring telemetry summary (webcam and desktop screen captures).
-- Permitted question-by-question review with candidate's submitted responses and server validations.
+### 4. Anti-Cheat Security & Lock-Down Engine
+- **Kiosk Mode (`setKiosk(true)`)**: Disables macOS 3-finger swipe desktop switching, Mission Control, system Dock, and Menu Bar during the examination.
+- **Screen-Saver Priority (`alwaysOnTop: 'screen-saver'`)**: Keeps the examination window on top of any external applications, AI assistants, or overlays.
+- **Clipboard & Context Menu Lock**: Blocks `Cmd+C`, `Cmd+V`, and `Cmd+X` to prevent copy-pasting questions to external AI tools (ChatGPT, Claude, etc.), and disables right-click context menus.
+- **Focus Loss & Tab Switch Detection**: Detects window blur, tab switching, and app switching in real time.
+- **Controlled Force Quit (1 Flag Warning)**:
+  - If a user attempts to close or quit via `Cmd+Q` / `Cmd+W`, the system logs **1 Proctoring Violation Flag** against the session.
+  - Displays a warning confirmation dialog: `Resume Exam` or `Force Quit Anyway`.
+  - Does not trap the candidate indefinitely — if confirmed, safely stops the session and exits cleanly.
 
-### 5. Candidate Attempt History
-- View past assessment submissions, verified scores, dates, and question completion counts.
+### 5. Answer Key & Step-by-Step Solutions
+- **Scorecard Hero**: Overall accuracy percentage, passed/fail verdict, and timing stats.
+- **Metric Breakdown**: Counts for Correct, Incorrect, and Skipped questions.
+- **Answer Key Review**:
+  - Displays each question with verified correct answers.
+  - Shows candidate's selected choice compared side-by-side with the correct option.
+  - 💡 **Explanation & Key Concept**: Comprehensive reasoning provided for every question.
+  - Filter by All, Correct, Incorrect, or Skipped with instant jump-to-question chips.
 
 ---
 
-## 🎨 Design System: Green, Blue & White
+## 🎨 Visual Identity: White, Blue, Green & Yellow Light Theme
 
-- **Primary Accent**: Royal Blue (`#2563eb`, `#1d4ed8`, `#eff6ff`)
-- **Status & Integrity**: Emerald Green (`#10b981`, `#059669`, `#ecfdf5`)
-- **Neutral & Card Surfaces**: Pure White (`#ffffff`), Slate-50 (`#f8fafc`), Slate-100 (`#f1f5f9`)
-- **Typography & Borders**: Deep Slate (`#0f172a`), Muted Slate (`#64748b`), Light Borders (`#e2e8f0`)
+Designed with a clean, high-contrast palette:
+- **Base Surfaces & Cards**: Crisp Pure White (`#ffffff`), Soft Slate (`#f8fafc`), Clean Borders (`#e2e8f0`).
+- **Primary Brand & Actions**: Royal Blue (`#2563eb`, `#3b82f6`, `#eff6ff`).
+- **Integrity & Correctness**: Emerald Green (`#16a34a`, `#10b981`, `#f0fdf4`).
+- **Highlights & Warnings**: Amber Yellow (`#d97706`, `#f59e0b`, `#fffbeb`).
+- **Typography**: Deep readable Slate (`#0f172a` primary, `#334155` secondary, `#64748b` muted).
 
 ---
 
 ## 🏗️ Architecture & Technology Stack
 
-| Layer | Technologies |
-|---|---|
-| **Desktop Shell** | Electron, Node.js IPC, ContextBridge (`window.veyra` & `window.athena`) |
-| **Frontend UI** | React 19, Vanilla CSS Design System, SVG icons |
-| **Backend API** | Node.js, Express, RESTful session management |
-| **Persistence** | File-system JSON (`backend/data/questions.json`, `backend/data/sessions.json`) |
-| **Testing & Quality** | Integration test suite (`backend/tests/run-tests.js`), ESLint, Vite |
+| Component | Technology | Description |
+|---|---|---|
+| **Desktop Shell** | Electron 35 | Native window management, Kiosk lockdown, IPC bridge, anti-cheat |
+| **Frontend UI** | React 19 + Vite | Fast component architecture, vanilla CSS design tokens |
+| **Backend API** | Node.js + Express | RESTful session management, evaluation, and flag logging |
+| **Data Storage** | Local JSON Store | `backend/data/questions.json` and `backend/data/sessions.json` |
+| **Proctoring Data** | File System Storage | `proctoring_data/camera_snaps/` and `proctoring_data/screen_snaps/` |
+| **Quality & Tests** | Node Test Suite + ESLint | 8 end-to-end integration tests (`npm test`) and strict linting |
 
 ---
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
 ```text
 Athena-Clone/
 ├── app/
-│   ├── app.js                 # Electron main process (Window management, proctoring IPC, snapshot storage)
-│   └── preload.js             # ContextBridge exposing secure `window.veyra` & `window.athena`
+│   ├── app.js                 # Electron main process (Kiosk lockdown, IPC, snapshot capture)
+│   └── preload.cjs            # Secure CommonJS ContextBridge (`window.veyra` & `window.athena`)
 ├── backend/
 │   ├── data/
-│   │   ├── questions.json     # Question bank (with server-side evaluation)
-│   │   └── sessions.json      # Exam sessions database
+│   │   ├── questions.json     # MCQ Question bank with server-side solutions
+│   │   └── sessions.json      # Exam session records and proctoring audit logs
 │   ├── tests/
-│   │   └── run-tests.js       # End-to-end candidate examination integration test suite
-│   ├── server.js              # Express REST API (Health, Questions, Start, Answer, Session, Submit)
-│   └── README.md              # Backend technical documentation
+│   │   └── run-tests.js       # Integration test runner
+│   └── server.js              # Express REST API (Questions, Sessions, Flags, Review)
+├── proctoring_data/           # Dedicated directory for proctoring evidence
+│   ├── camera_snaps/          # Automated webcam snapshots (*-cam.jpg)
+│   └── screen_snaps/          # Automated screen captures (*-screen.jpg)
 ├── src/
 │   ├── components/
-│   │   ├── AvailableExams.jsx # Candidate available assessments portal
-│   │   ├── AttemptHistory.jsx # Candidate attempt history and review logs
-│   │   ├── ExamArena.jsx      # Active exam interface (palette, workspace, live proctoring)
-│   │   ├── ExamResults.jsx    # Post-exam scorecard and detailed response review
-│   │   ├── Header.jsx         # Top navbar with live timer, stage badge, and API health status
-│   │   ├── PreExamSetup.jsx   # Candidate verification, webcam test & fullscreen mode
-│   │   └── RulesModal.jsx     # Exam code of conduct dialog
+│   │   ├── AvailableExams.jsx # Portal for available assessments
+│   │   ├── PreExamSetup.jsx   # Candidate verification & webcam check
+│   │   ├── ExamArena.jsx      # Active exam interface (option shuffling, mark for review, flags)
+│   │   ├── ExamResults.jsx    # Post-exam scorecard, answer key & solutions review
+│   │   ├── AttemptHistory.jsx # Past candidate attempt logs
+│   │   ├── Header.jsx         # Top navigation and status bar
+│   │   └── RulesModal.jsx     # Examination rules modal
 │   ├── services/
-│   │   └── api.js             # API client functions for all backend endpoints
-│   ├── App.css                # Green, Blue & White component styling
-│   ├── App.jsx                # Main application coordinator & stage state manager
-│   ├── index.css              # Global tokens and design system variables
+│   │   └── api.js             # Dynamic port API client with Electron IPC proxy
+│   ├── App.css                # Component styling (Light Theme: White/Blue/Green/Yellow)
+│   ├── App.jsx                # App shell and stage state machine
+│   ├── index.css              # Global design tokens and CSS variables
 │   └── main.jsx               # React DOM entry point
 ├── package.json
 └── vite.config.js
@@ -96,38 +109,41 @@ Athena-Clone/
 
 ---
 
-## 🚀 Running on Local Machine
+## 🚀 Getting Started
 
-### Option 1: Browser Mode (Single Command)
-Runs both the backend API server (`http://127.0.0.1:3000`) and the Vite web client (`http://localhost:5173`):
+### 1. Run as Electron Desktop App + Backend (Recommended)
+This compiles the production frontend bundle, starts the backend, and opens the Electron desktop app:
+```bash
+npm start
+```
+
+### 2. Run in Browser Development Mode
+Runs both the backend and Vite dev server concurrently:
 ```bash
 npm run dev:all
 ```
 Open **`http://localhost:5173`** in your browser.
 
-### Option 2: Electron Desktop Mode
-Launches the native Electron desktop application with webcam proctoring, fullscreen security, and local disk snapshot storage:
+### 3. Run Integration Tests
 ```bash
-npm run electron:dev
+npm test
 ```
 
-### Option 3: Verification & Tests
+### 4. Run Linter
 ```bash
-# Run candidate examination integration tests
-npm test
-
-# Run ESLint check
 npm run lint
+```
 
-# Build production bundle
+### 5. Build Production Bundle
+```bash
 npm run build
 ```
 
 ---
 
-## 🔐 Security & Integrity Model
+## 🔒 Proctoring Data & Snapshots Inspection
+Automated snapshots are saved directly in the project directory for proctor audit:
+- Camera photos: `proctoring_data/camera_snaps/`
+- Screen captures: `proctoring_data/screen_snaps/`
 
-1. **Server-Authoritative Evaluation**: Question answers (`correctAnswer`) remain strictly on the backend and are never transmitted to the candidate client during an active test.
-2. **Context Isolation**: The Electron renderer operates with `contextIsolation: true` and `nodeIntegration: false`, communicating exclusively via typed, allowlisted IPC channels in `preload.js`.
-3. **Dual Telemetry**: Automated webcam snapshots (saved to `userData/veyra-camera-snaps/`) and native window captures (saved to `userData/veyra-screen-snaps/`) ensure audit readiness.
-4. **Resilient Stream Coordination**: MediaStream tracks persist across view transitions without dropping feed connectivity.
+These folders are intentionally separated from candidate view to maintain examination integrity.

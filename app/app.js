@@ -19,14 +19,16 @@ let screenInterval = null;
 let isShuttingDown = false;
 
 // ─── Path Helpers ─────────────────────────────────────────────────────────────
+const projectRoot = path.resolve(import.meta.dirname, "..");
+
 function getCameraSnapDir() {
-  const baseDir = path.join(app.getPath("userData"), "veyra-camera-snaps");
+  const baseDir = path.join(projectRoot, "proctoring_data", "camera_snaps");
   fs.mkdirSync(baseDir, { recursive: true });
   return baseDir;
 }
 
 function getScreenSnapDir() {
-  const baseDir = path.join(app.getPath("userData"), "veyra-screen-snaps");
+  const baseDir = path.join(projectRoot, "proctoring_data", "screen_snaps");
   fs.mkdirSync(baseDir, { recursive: true });
   return baseDir;
 }
@@ -158,6 +160,24 @@ function createWindow(port = 3000) {
   // Prevent new windows
   electronWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
+  // Proctoring: Detect when window loses focus (Tab switch, gesture swipe, other app activation)
+  electronWindow.on("blur", () => {
+    if (isExamLockdown && !electronWindow?.isDestroyed()) {
+      electronWindow.webContents.send("proctor-violation", {
+        type: "WINDOW_BLUR",
+        message: "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+      });
+    }
+  });
+
+  // Proctoring: Issue 1 flag warning on quit/close attempt and confirm force quit
+  electronWindow.on("close", async (event) => {
+    if (isExamLockdown && !isShuttingDown) {
+      event.preventDefault();
+      await promptForceQuitWarning();
+    }
+  });
+
   const isDevMode = !app.isPackaged && (process.argv.includes("--dev") || process.env.NODE_ENV === "development");
   const indexPath = path.join(import.meta.dirname, "../dist/index.html");
   if (isDevMode) {
@@ -197,10 +217,180 @@ async function captureAndSaveScreen() {
 }
 
 // ─── IPC Handlers ─────────────────────────────────────────────────────────────
+let isExamLockdown = false;
+
+// ─── Proctoring Lockdown & Anti-Cheat Handlers ────────────────────────────────
+function enableWindowProtection() {
+  if (!electronWindow || electronWindow.isDestroyed()) return;
+
+  isExamLockdown = true;
+
+  // 1. Enable Kiosk mode (Disables Mac 3-finger swipe, Spaces, Dock, Menu Bar)
+  try {
+    electronWindow.setKiosk(true);
+    electronWindow.setAlwaysOnTop(true, "screen-saver");
+    electronWindow.setFullScreenable(false);
+  } catch (err) {
+    console.warn("[VEYRA] Kiosk mode error:", err.message);
+  }
+
+  // 2. Disable Right-click context menu
+  electronWindow.webContents.on("context-menu", preventContextMenu);
+
+  // 3. Intercept & Block Cheat Shortcuts (Copy/Paste, App Switch, Close, DevTools)
+  electronWindow.webContents.on("before-input-event", handleLockdownKeyInput);
+}
+
+function disableWindowProtection() {
+  if (!electronWindow || electronWindow.isDestroyed()) return;
+
+  isExamLockdown = false;
+
+  try {
+    electronWindow.setKiosk(false);
+    electronWindow.setAlwaysOnTop(false);
+    electronWindow.setFullScreenable(true);
+  } catch (err) {
+    console.warn("[VEYRA] Exit kiosk error:", err.message);
+  }
+
+  electronWindow.webContents.removeListener("context-menu", preventContextMenu);
+  electronWindow.webContents.removeListener("before-input-event", handleLockdownKeyInput);
+}
+
+function preventContextMenu(e) {
+  if (isExamLockdown) e.preventDefault();
+}
+
+let isPromptingQuit = false;
+
+async function promptForceQuitWarning() {
+  if (isPromptingQuit) return;
+  isPromptingQuit = true;
+
+  // 1. Issue 1 flag warning immediately to renderer
+  if (electronWindow && !electronWindow.isDestroyed()) {
+    electronWindow.webContents.send("proctor-violation", {
+      type: "FORCE_QUIT_WARNING",
+      message: "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+    });
+  }
+
+  // 2. Show confirmation dialog with 1 flag warning
+  const result = await dialog.showMessageBox(electronWindow, {
+    type: "warning",
+    title: "⚠️ Proctoring Warning: Quit Attempt",
+    message: "1 Proctoring Flag has been logged against your examination.",
+    detail:
+      "You attempted to close or force-quit during an active exam.\n\n" +
+      "If you choose 'Force Quit Anyway', your exam session will be terminated and marked as interrupted.\n\n" +
+      "Would you like to resume your exam, or force quit anyway?",
+    buttons: ["Resume Exam", "Force Quit Anyway"],
+    defaultId: 0,
+    cancelId: 0,
+  });
+
+  isPromptingQuit = false;
+
+  if (result.response === 1) {
+    // User explicitly confirmed Force Quit
+    isShuttingDown = true;
+    disableWindowProtection();
+    stopBackend();
+    app.exit(0);
+  }
+}
+
+function handleLockdownKeyInput(event, input) {
+  if (!isExamLockdown) return;
+
+  const isCmdOrCtrl = input.control || input.meta;
+  const key = input.key?.toLowerCase();
+
+  // Block Copy, Cut, Paste (prevent pasting into AI agents or copying questions)
+  if (isCmdOrCtrl && (key === "c" || key === "v" || key === "x")) {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "CLIPBOARD_ATTEMPT",
+      message: "Clipboard access (Copy/Cut/Paste) is disabled during the exam.",
+    });
+    return;
+  }
+
+  // Block App Switch / Task Switch (Cmd+Tab, Alt+Tab)
+  if ((input.alt || input.meta) && input.key === "Tab") {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "APP_SWITCH_ATTEMPT",
+      message: "Application switching is blocked by proctoring policies.",
+    });
+    return;
+  }
+
+  // Handle Quit / Close shortcuts (Cmd+Q, Cmd+W) -> prompt with 1 flag warning
+  if (isCmdOrCtrl && (key === "q" || key === "w")) {
+    event.preventDefault();
+    promptForceQuitWarning();
+    return;
+  }
+
+  // Block Hide / Minimize (Cmd+H, Cmd+M)
+  if (isCmdOrCtrl && (key === "h" || key === "m")) {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "WINDOW_MINIMIZE_ATTEMPT",
+      message: "Minimizing or hiding the exam window is prohibited during active proctoring.",
+    });
+    return;
+  }
+
+  // Block DevTools / Reload / Fullscreen toggle (F11, F12, Cmd+R, Cmd+Opt+I)
+  if (
+    input.key === "F11" ||
+    input.key === "F12" ||
+    (isCmdOrCtrl && key === "r") ||
+    (isCmdOrCtrl && input.alt && key === "i")
+  ) {
+    event.preventDefault();
+  }
+}
+
+ipcMain.handle("enter-exam-lockdown", () => {
+  enableWindowProtection();
+  return { locked: true };
+});
+
+ipcMain.handle("exit-exam-lockdown", () => {
+  disableWindowProtection();
+  return { locked: false };
+});
+
+// Open snapshot folders in Finder/Explorer
+ipcMain.handle("open-snaps-folder", async (_event, type = "all") => {
+  const camDir = getCameraSnapDir();
+  const scrDir = getScreenSnapDir();
+
+  try {
+    if (type === "camera") {
+      await shell.openPath(camDir);
+    } else if (type === "screen") {
+      await shell.openPath(scrDir);
+    } else {
+      await shell.openPath(camDir);
+      await shell.openPath(scrDir);
+    }
+    return { success: true, camDir, scrDir };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle("start-proctoring", (_event, opts = {}) => {
   startTimestamp = Date.now();
   const camInterval = opts.webcamInterval || 5000;
   const scrInterval = opts.screenInterval || 10000;
+
+  enableWindowProtection();
 
   if (timerInterval) clearInterval(timerInterval);
   if (cameraInterval) clearInterval(cameraInterval);
@@ -227,29 +417,9 @@ ipcMain.handle("start-proctoring", (_event, opts = {}) => {
   return { started: true, camInterval, scrInterval };
 });
 
-// Legacy alias
-ipcMain.handle("start-timer", () => {
-  startTimestamp = Date.now();
-  if (timerInterval) clearInterval(timerInterval);
-  if (cameraInterval) clearInterval(cameraInterval);
-  if (screenInterval) clearInterval(screenInterval);
-
-  timerInterval = setInterval(() => {
-    if (electronWindow && !electronWindow.isDestroyed()) {
-      electronWindow.webContents.send("timer", (Date.now() - startTimestamp) / 1000);
-    }
-  }, 1000);
-  cameraInterval = setInterval(() => {
-    if (electronWindow && !electronWindow.isDestroyed()) {
-      electronWindow.webContents.send("camera-shot");
-    }
-  }, 5000);
-  screenInterval = setInterval(() => { captureAndSaveScreen(); }, 10000);
-  setTimeout(() => captureAndSaveScreen(), 1000);
-  return true;
-});
-
 ipcMain.handle("stop-proctoring", () => {
+  disableWindowProtection();
+
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (cameraInterval) { clearInterval(cameraInterval); cameraInterval = null; }
   if (screenInterval) { clearInterval(screenInterval); screenInterval = null; }

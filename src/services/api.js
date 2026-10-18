@@ -184,3 +184,16 @@ export async function getSessions(userId) {
 export async function getSessionReview(sessionId) {
   return request(`/exam/session/${encodeURIComponent(sessionId)}/review`);
 }
+
+/** 10. POST /exam/flag – Log proctoring violation / cheating flag */
+export async function logProctorFlag(sessionId, type, reason, details) {
+  return request('/exam/flag', {
+    method: 'POST',
+    body: JSON.stringify({
+      sessionId,
+      type,
+      reason,
+      details,
+    }),
+  });
+}
