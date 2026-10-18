@@ -18,8 +18,8 @@
     "explanation": "The Main Process is the entry point and is responsible for creating BrowserWindow instances and managing the application lifecycle.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 2,
@@ -40,8 +40,8 @@
     "explanation": "ipcRenderer.invoke() sends a message to the main process and returns a Promise that resolves with the handler's return value.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 3,
@@ -62,8 +62,8 @@
     "explanation": "A preload script runs in the renderer context but has access to Node.js APIs. It uses contextBridge.exposeInMainWorld() to safely expose specific APIs to the renderer.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 4,
@@ -84,8 +84,8 @@
     "explanation": "GET is the appropriate HTTP method for retrieving resources. It is idempotent and safe.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 5,
@@ -106,8 +106,8 @@
     "explanation": "fs.writeFileSync() is a synchronous function that writes data to a file, blocking execution until the write is complete.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 6,
@@ -128,8 +128,8 @@
     "explanation": "contextIsolation: true ensures that the preload script and the renderer page run in separate JavaScript contexts, preventing renderer-side code from accessing Node.js APIs directly.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 7,
@@ -150,8 +150,8 @@
     "explanation": "Vite uses native ES modules in development to serve files on demand, making HMR nearly instant regardless of application size.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 8,
@@ -172,8 +172,8 @@
     "explanation": "useEffect allows function components to perform side effects such as data fetching, subscriptions, and DOM manipulation after rendering.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 9,
@@ -194,8 +194,8 @@
     "explanation": "REST stands for Representational State Transfer, an architectural style for distributed hypermedia systems.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 10,
@@ -216,8 +216,8 @@
     "explanation": "HTTP 201 Created is the standard response for a POST request that successfully creates a new resource.",
     "status": "published",
     "createdAt": "2026-10-01T00:00:00.000Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 11,
@@ -238,8 +238,8 @@
     "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
     "status": "published",
     "createdAt": "2026-10-17T19:48:59.121Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 12,
@@ -260,8 +260,8 @@
     "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
     "status": "published",
     "createdAt": "2026-10-17T19:50:13.992Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 13,
@@ -282,8 +282,8 @@
     "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
     "status": "published",
     "createdAt": "2026-10-17T19:52:12.627Z",
-    "updatedAt": "2026-10-17T20:03:44.180Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   },
   {
     "id": 14,
@@ -304,7 +304,7 @@
     "explanation": "The kernel is the core component that manages CPU, memory, and devices.",
     "status": "published",
     "createdAt": "2026-10-17T20:03:44.666Z",
-    "updatedAt": "2026-10-17T20:03:44.666Z",
-    "createdBy": "842454cd-188a-4e28-8606-9d8dce04e810"
+    "updatedAt": "2026-10-17T20:05:43.727Z",
+    "createdBy": "1cae4ffc-dfd2-4a6d-bc95-c85e64461660"
   }
 ]

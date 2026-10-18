@@ -1,6 +1,14 @@
 // src/components/ExamResults.jsx
 import PropTypes from 'prop-types';
 
+function formatTime(seconds) {
+  const s = Math.floor(Number(seconds) || 0);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (m > 0) return `${m}m ${sec.toString().padStart(2, '0')}s`;
+  return `${sec}s`;
+}
+
 export default function ExamResults({
   resultData,
   sessionData,
@@ -11,162 +19,112 @@ export default function ExamResults({
   onRestart,
 }) {
   const attempted = resultData?.attempted ?? sessionData?.attempted ?? 0;
-  const correct = resultData?.correct ?? sessionData?.correct ?? 0;
-  const wrong = resultData?.wrong ?? sessionData?.wrong ?? 0;
-  const totalQuestions = questionsList.length || (attempted + wrong);
+  const correct   = resultData?.correct   ?? sessionData?.correct   ?? 0;
+  const wrong     = resultData?.wrong     ?? sessionData?.wrong     ?? 0;
+  const total     = questionsList.length  || (attempted + wrong);
+  const accuracy  = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const passed    = accuracy >= 60;
+  const skipped   = total - attempted;
 
-  const accuracyScore = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+  const optLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   return (
-    <div className="results-container">
-      {/* Completion Header Banner */}
-      <div className="results-hero-card">
-        <div className="results-hero-icon">🏆</div>
-        <h2>Examination Completed Successfully</h2>
-        <p className="results-hero-sub">
-          Your responses have been validated and recorded on the Athena Exam Backend.
+    <div className="results-container animate-fade-in">
+
+      {/* ── Hero */}
+      <div className="results-hero">
+        <div className={`result-score-ring ${passed ? 'pass' : 'fail'}`}>
+          <div className={`result-pct ${passed ? 'pass' : 'fail'}`}>{accuracy}%</div>
+          <div className="result-pct-sub">Accuracy</div>
+        </div>
+
+        <div className="results-verdict">
+          {passed ? '🎉 Assessment Passed' : '📚 Assessment Not Passed'}
+        </div>
+        <p className="results-tagline">
+          {passed
+            ? 'Congratulations! Your performance meets the required benchmark.'
+            : 'Don\'t give up — review your answers and try again.'}
         </p>
-        <div className="session-tag-chip">
-          Session ID: <code>{sessionData?.sessionId || 'N/A'}</code>
+
+        {sessionData?.sessionId && (
+          <div style={{ marginTop: 14, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            Session: {sessionData.sessionId}
+          </div>
+        )}
+      </div>
+
+      {/* ── Score cards */}
+      <div className="result-score-cards">
+        <div className="score-card">
+          <div className="score-card-val correct">{correct}</div>
+          <div className="score-card-lbl">Correct</div>
+        </div>
+        <div className="score-card">
+          <div className="score-card-val wrong">{wrong}</div>
+          <div className="score-card-lbl">Incorrect</div>
+        </div>
+        <div className="score-card">
+          <div className="score-card-val skipped">{skipped}</div>
+          <div className="score-card-lbl">Skipped</div>
         </div>
       </div>
 
-      {/* Candidate & Timing Meta Grid */}
-      <div className="candidate-summary-bar">
-        <div className="summary-col">
-          <span className="col-label">Candidate Name</span>
-          <strong className="col-val">{sessionData?.name || 'N/A'}</strong>
-        </div>
-        <div className="summary-col">
-          <span className="col-label">Candidate ID</span>
-          <strong className="col-val">{sessionData?.userId || 'N/A'}</strong>
-        </div>
-        <div className="summary-col">
-          <span className="col-label">Time Taken</span>
-          <strong className="col-val">{timer || '0'} seconds</strong>
-        </div>
-        <div className="summary-col">
-          <span className="col-label">Proctor Snaps</span>
-          <strong className="col-val">
-            {snapshotCount} cam {screenSnapshotCount > 0 ? `+ ${screenSnapshotCount} scr` : ''}
-          </strong>
-        </div>
+      {/* ── Meta bar */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20,
+      }}>
+        {[
+          ['Candidate', sessionData?.name || '—'],
+          ['Student ID', sessionData?.userId || '—'],
+          ['Time Taken', formatTime(timer)],
+          ['Proctor Snaps', `${snapshotCount} cam${screenSnapshotCount > 0 ? ` · ${screenSnapshotCount} scr` : ''}`],
+        ].map(([label, value]) => (
+          <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '10px 14px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+          </div>
+        ))}
       </div>
 
-
-      {/* Metric Cards Grid */}
-      <div className="score-metrics-grid">
-        <div className="metric-card card-total">
-          <div className="metric-header">Total Questions</div>
-          <div className="metric-value">{totalQuestions}</div>
-          <div className="metric-desc">Available in assessment</div>
-        </div>
-
-        <div className="metric-card card-attempted">
-          <div className="metric-header">Attempted</div>
-          <div className="metric-value">{attempted}</div>
-          <div className="metric-desc">Answers submitted to backend</div>
-        </div>
-
-        <div className="metric-card card-correct">
-          <div className="metric-header">Correct Answers</div>
-          <div className="metric-value text-green">{correct}</div>
-          <div className="metric-desc">Validated by server logic</div>
-        </div>
-
-        <div className="metric-card card-wrong">
-          <div className="metric-header">Incorrect Answers</div>
-          <div className="metric-value text-red">{wrong}</div>
-          <div className="metric-desc">Needs revision</div>
-        </div>
-
-        <div className="metric-card card-score">
-          <div className="metric-header">Accuracy Score</div>
-          <div className="metric-value text-indigo">{accuracyScore}%</div>
-          <div className="metric-desc">Based on total questions</div>
-        </div>
-      </div>
-
-      {/* Question by Question Response Log */}
-      <div className="answers-breakdown-card">
-        <div className="breakdown-header">
-          <h3>Detailed Response Breakdown</h3>
-          <p>Review the questions and your submitted selections recorded in the backend session.</p>
-        </div>
-
-        <div className="questions-review-list">
+      {/* ── Answer breakdown */}
+      {questionsList.length > 0 && (
+        <div className="review-table">
+          <div className="review-table-header">Response Breakdown</div>
+          <div className="review-row header-row">
+            <span>#</span>
+            <span>Question</span>
+            <span>Your Answer</span>
+            <span>Result</span>
+          </div>
           {questionsList.map((q, idx) => {
-            const answerRecord = sessionData?.answers?.find(
-              (ans) => ans.questionId === q.id
-            );
-            const isAnswered = Boolean(answerRecord);
-            const selectedOptIndex = answerRecord?.selectedAnswer;
+            const rec = sessionData?.answers?.find((a) => a.questionId === q.id);
+            const answered = Boolean(rec);
+            const correct_ans = rec?.isCorrect;
+            const selectedIdx = rec?.selectedAnswer;
 
             return (
-              <div
-                key={q.id}
-                className={`review-question-item ${isAnswered ? (answerRecord?.isCorrect ? 'item-correct' : 'item-wrong') : 'item-unanswered'}`}
-              >
-                <div className="review-q-header">
-                  <div className="review-q-num">
-                    Question {idx + 1}
-                  </div>
-                  <div className="review-status-tag">
-                    {isAnswered ? (
-                      answerRecord?.isCorrect ? (
-                        <span className="badge badge-success">✓ Correct (+1)</span>
-                      ) : (
-                        <span className="badge badge-danger">✗ Incorrect (0)</span>
-                      )
-                    ) : (
-                      <span className="badge badge-neutral">○ Not Attempted</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="review-q-prompt">
-                  <strong>{q.question}</strong>
-                </div>
-
-                <div className="review-options-list">
-                  {q.options.map((optText, optIdx) => {
-                    const isUserChoice = isAnswered && selectedOptIndex === optIdx;
-                    return (
-                      <div
-                        key={optIdx}
-                        className={`review-opt-pill ${isUserChoice ? (answerRecord?.isCorrect ? 'choice-correct' : 'choice-wrong') : ''}`}
-                      >
-                        <span className="opt-letter">{String.fromCharCode(65 + optIdx)}.</span>
-                        <span className="opt-label">{optText}</span>
-                        {isUserChoice && (
-                          <span className="user-choice-indicator">
-                            (Your Selection)
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {isAnswered && answerRecord.answeredAt && (
-                  <div className="review-timestamp">
-                    Timestamp: {new Date(answerRecord.answeredAt).toLocaleTimeString()}
-                  </div>
-                )}
+              <div key={q.id} className="review-row">
+                <span className="review-q-num">Q{idx + 1}</span>
+                <span className="review-q-text" title={q.question}>{q.question}</span>
+                <span className="review-answer">
+                  {answered
+                    ? `Option ${optLetters[selectedIdx] || selectedIdx + 1}`
+                    : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                </span>
+                <span className={`review-result ${!answered ? 'skipped' : correct_ans ? 'correct' : 'wrong'}`}>
+                  {!answered ? 'Skipped' : correct_ans ? '✓ Correct' : '✗ Wrong'}
+                </span>
               </div>
             );
           })}
         </div>
-      </div>
+      )}
 
-      {/* Bottom Action */}
+      {/* ── Actions */}
       <div className="results-actions">
-        <button
-          type="button"
-          className="btn btn-primary btn-lg"
-          onClick={onRestart}
-        >
-          🔄 Start Another Examination
+        <button type="button" className="btn btn-primary btn-lg" onClick={onRestart}>
+          Take Another Assessment
         </button>
       </div>
     </div>
@@ -174,11 +132,11 @@ export default function ExamResults({
 }
 
 ExamResults.propTypes = {
-  resultData: PropTypes.object,
-  sessionData: PropTypes.object,
-  questionsList: PropTypes.array.isRequired,
-  timer: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  snapshotCount: PropTypes.number.isRequired,
+  resultData:          PropTypes.object,
+  sessionData:         PropTypes.object,
+  questionsList:       PropTypes.array.isRequired,
+  timer:               PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  snapshotCount:       PropTypes.number.isRequired,
   screenSnapshotCount: PropTypes.number,
-  onRestart: PropTypes.func.isRequired,
+  onRestart:           PropTypes.func.isRequired,
 };

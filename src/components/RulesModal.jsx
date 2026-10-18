@@ -1,91 +1,71 @@
 // src/components/RulesModal.jsx
 import PropTypes from 'prop-types';
 
+const RULES = [
+  'Stay on the exam screen at all times during the assessment.',
+  'Your webcam must remain enabled and clearly visible throughout.',
+  'Automated snapshots of your webcam and exam window are recorded periodically.',
+  'Do not use external assistance, notes, or open unauthorized applications.',
+  'Click "Submit Exam" when finished, or the exam auto-submits when time expires.',
+  'All proctoring data is stored locally and securely on this machine only.',
+];
+
 export default function RulesModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
-  const handleTriggerNative = () => {
-    if (window.athena && typeof window.athena.showRules === 'function') {
-      window.athena.showRules();
-    } else {
-      alert(
-        'Exam Rules (Native Fallback):\n' +
-        '1. Stay on the exam screen.\n' +
-        '2. Camera must remain enabled.\n' +
-        '3. Do not leave the exam.\n' +
-        '4. Do not use external assistance.\n' +
-        '5. Click Exit Exam when finished.'
-      );
-    }
-  };
-
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="rules-modal-title"
+    >
+      <div className="modal-box">
         <div className="modal-header">
-          <div className="modal-title-wrap">
-            <div className="modal-icon">📜</div>
-            <div>
-              <h3>Athena Examination Rules & Guidelines</h3>
-              <p className="modal-subtitle">Official Assessment Proctoring Protocol</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                background: 'rgba(59,130,246,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
             </div>
+            <span className="modal-title" id="rules-modal-title">Exam Rules &amp; Proctoring Policy</span>
           </div>
-          <button type="button" className="modal-close-btn" onClick={onClose}>
-            ✕
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close rules"
+          >
+            ×
           </button>
         </div>
 
         <div className="modal-body">
-          <div className="rule-item">
-            <div className="rule-number">1</div>
-            <div className="rule-text">
-              <strong>Stay on the Exam Screen:</strong> Fullscreen mode is mandatory. Switching windows, exiting fullscreen, or minimizing will trigger a proctoring violation.
-            </div>
-          </div>
-
-          <div className="rule-item">
-            <div className="rule-number">2</div>
-            <div className="rule-text">
-              <strong>Continuous Camera Proctoring:</strong> Your webcam must remain active and unobstructed. Automated snapshot captures are recorded every 5 seconds to verify candidate identity.
-            </div>
-          </div>
-
-          <div className="rule-item">
-            <div className="rule-number">3</div>
-            <div className="rule-text">
-              <strong>Single-Attempt per Question:</strong> Once an answer for an MCQ is submitted to the backend, it is locked and recorded immediately.
-            </div>
-          </div>
-
-          <div className="rule-item">
-            <div className="rule-number">4</div>
-            <div className="rule-text">
-              <strong>No External Assistance:</strong> Use of secondary devices, notes, or unauthorized aids is strictly prohibited and logged.
-            </div>
-          </div>
-
-          <div className="rule-item">
-            <div className="rule-number">5</div>
-            <div className="rule-text">
-              <strong>Final Submission:</strong> When you complete all questions, click <em>Submit Exam</em> to finalize your attempt and generate your scorecard.
-            </div>
+          <div className="rules-list">
+            {RULES.map((rule, i) => (
+              <div key={i} className="rule-item">
+                <div className="rule-number">{i + 1}</div>
+                <p className="rule-text">{rule}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         <div className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={handleTriggerNative}
-          >
-            Show Native Electron Dialog
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={onClose}
-          >
-            I Understand & Agree
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            Understood, Got It
           </button>
         </div>
       </div>
@@ -94,6 +74,6 @@ export default function RulesModal({ isOpen, onClose }) {
 }
 
 RulesModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
+  isOpen:  PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
 };

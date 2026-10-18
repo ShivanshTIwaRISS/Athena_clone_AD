@@ -28,245 +28,240 @@ export default function PreExamSetup({
   }, [videoRef, mediaStream]);
 
   const isReadyToStart = Boolean(
-    userId.trim() &&
-    name.trim() &&
-    cameraEnabled &&
-    fullScreen &&
-    backendOnline &&
-    !isStarting
+    userId.trim() && name.trim() && cameraEnabled && fullScreen && backendOnline && !isStarting
   );
 
+  const checks = [
+    {
+      id: 'backend',
+      label: 'Backend Server',
+      sub: backendOnline ? 'Connected and ready' : 'Not reachable — check server',
+      pass: backendOnline,
+      action: !backendOnline ? (
+        <button type="button" className="btn btn-outline btn-sm" onClick={onCheckBackend}>
+          Retry
+        </button>
+      ) : null,
+    },
+    {
+      id: 'camera',
+      label: 'Webcam Access',
+      sub: cameraEnabled ? 'Feed active — proctoring ready' : 'Permission required for proctoring',
+      pass: cameraEnabled,
+      action: !cameraEnabled ? (
+        <button type="button" className="btn btn-primary btn-sm" onClick={onGetCameraAccess}>
+          Grant Access
+        </button>
+      ) : null,
+    },
+    {
+      id: 'fullscreen',
+      label: 'Full Screen Mode',
+      sub: fullScreen ? 'Active — window integrity secured' : 'Required before exam begins',
+      pass: fullScreen,
+      action: !fullScreen ? (
+        <button type="button" className="btn btn-primary btn-sm" onClick={onEnableFullScreen}>
+          Enable
+        </button>
+      ) : null,
+    },
+    {
+      id: 'identity',
+      label: 'Candidate Identity',
+      sub: userId.trim() && name.trim() ? `${name} · ${userId}` : 'Enter ID and name below',
+      pass: Boolean(userId.trim() && name.trim()),
+      action: null,
+    },
+  ];
+
+  const passedCount = checks.filter((c) => c.pass).length;
+
   return (
-    <div className="setup-container">
-      {/* Intro Header */}
-      <div className="setup-header">
-        <div className="setup-badge">Step 1 of 2: Candidate Readiness</div>
-        <h2>Pre-Examination Verification</h2>
-        <p>Complete the candidate details and hardware checks below before beginning your proctored assessment.</p>
-      </div>
+    <div className="setup-container animate-fade-in">
+      {/* ── Left panel: checks + identity form */}
+      <div className="setup-main-panel">
 
-      {/* Error alert if any */}
-      {errorMessage && (
-        <div className="alert-banner error-banner">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <div>
-            <strong>Setup Notice:</strong> {errorMessage}
+        {/* Identity form */}
+        <div className="setup-card">
+          <div className="setup-card-title">
+            <div className="setup-card-icon icon-blue">👤</div>
+            Candidate Information
           </div>
-        </div>
-      )}
-
-      {/* Backend Status Card */}
-      <div className={`system-card ${backendOnline ? 'card-success' : 'card-warning'}`}>
-        <div className="card-icon-area">
-          <div className={`status-icon-bubble ${backendOnline ? 'bubble-online' : 'bubble-offline'}`}>
-            {backendOnline ? '⚡' : '⚠️'}
-          </div>
-        </div>
-        <div className="card-body-area">
-          <div className="card-title-row">
-            <h4>Backend Server Connection</h4>
-            <span className={`pill-tag ${backendOnline ? 'pill-green' : 'pill-amber'}`}>
-              {backendOnline ? 'Connected (Port 3000)' : 'Not Connected'}
-            </span>
-          </div>
-          <p className="card-desc">
-            {backendOnline
-              ? 'Exam backend is running and ready to handle session initialization, question delivery, and answer validation.'
-              : 'Backend server is not responding at http://localhost:3000. Please ensure `node backend/server.js` or `npm start` is running.'}
-          </p>
-          {!backendOnline && (
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={onCheckBackend}
-            >
-              🔄 Retry Connection (GET /)
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Candidate Profile Details Card */}
-      <div className="system-card">
-        <div className="card-icon-area">
-          <div className="status-icon-bubble bubble-primary">👤</div>
-        </div>
-        <div className="card-body-area">
-          <h4>Candidate Information</h4>
-          <p className="card-desc">Enter your Student ID and Full Name to initiate a new tracked exam session.</p>
-
-          <div className="input-grid">
-            <div className="input-group">
-              <label htmlFor="student-id-input">Candidate / Student ID *</label>
+          <div className="identity-form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="field-student-id">Student ID</label>
               <input
-                id="student-id-input"
+                id="field-student-id"
+                className="form-input"
                 type="text"
                 placeholder="e.g. student-101"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 disabled={isStarting}
-                className="text-input"
               />
             </div>
-            <div className="input-group">
-              <label htmlFor="student-name-input">Candidate Full Name *</label>
+            <div className="form-group">
+              <label className="form-label" htmlFor="field-full-name">Full Name</label>
               <input
-                id="student-name-input"
+                id="field-full-name"
+                className="form-input"
                 type="text"
                 placeholder="e.g. Shivansh Tiwari"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isStarting}
-                className="text-input"
               />
             </div>
           </div>
         </div>
+
+        {/* Verification checklist */}
+        <div className="setup-card">
+          <div className="setup-card-title">
+            <div className="setup-card-icon icon-green">✅</div>
+            System Readiness Checklist
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+              {passedCount} / {checks.length} ready
+            </span>
+          </div>
+          <div className="verification-checklist">
+            {checks.map((c) => (
+              <div key={c.id} className={`check-item ${c.pass ? 'pass' : 'fail'}`}>
+                <div className={`check-icon ${c.pass ? 'pass' : 'fail'}`}>
+                  {c.pass ? '✓' : '○'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className="check-label">{c.label}</div>
+                  <div className="check-sub">{c.sub}</div>
+                </div>
+                {c.action && <div className="check-action">{c.action}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Error */}
+        {errorMessage && (
+          <div className="alert alert-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{errorMessage}</span>
+          </div>
+        )}
       </div>
 
-      {/* Proctored Hardware & Environment Cards Grid */}
-      <div className="requirements-grid">
-        {/* Camera Check */}
-        <div className={`system-card req-card ${cameraEnabled ? 'card-success' : ''}`}>
-          <div className="card-icon-area">
-            <div className={`status-icon-bubble ${cameraEnabled ? 'bubble-online' : 'bubble-neutral'}`}>
-              📷
-            </div>
+      {/* ── Right panel: webcam + start */}
+      <div className="setup-side-panel">
+        {/* Webcam preview */}
+        <div className="setup-card">
+          <div className="setup-card-title">
+            <div className="setup-card-icon icon-amber">📹</div>
+            Webcam Preview
           </div>
-          <div className="card-body-area">
-            <div className="card-title-row">
-              <h4>1. Camera Configuration</h4>
-              {cameraEnabled && <span className="pill-tag pill-green">Verified</span>}
-            </div>
-            <p className="card-desc">
-              Webcam feed is required for periodic AI proctoring snapshots during the examination.
-            </p>
-
-            <div className="camera-action-box">
-              <button
-                type="button"
-                className={`btn ${cameraEnabled ? 'btn-success' : 'btn-black'}`}
-                disabled={cameraEnabled}
-                onClick={onGetCameraAccess}
-              >
-                {cameraEnabled ? '✓ Camera Active' : 'Grant Camera Access'}
-              </button>
-
-              <div className={`camera-preview-wrapper ${cameraEnabled ? 'active' : 'idle'}`}>
+          <div className="webcam-preview-wrap">
+            {cameraEnabled ? (
+              <>
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="video-preview-element"
+                  className="webcam-video"
                 />
-                {!cameraEnabled && (
-                  <div className="camera-placeholder">
-                    <span>Camera Offline</span>
-                  </div>
-                )}
-              </div>
-            </div>
+                <div className="webcam-recording-badge">
+                  <span className="rec-dot" />
+                  LIVE
+                </div>
+              </>
+            ) : (
+              <>
+                {/* still render hidden video so ref is attached */}
+                <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+                <div className="webcam-offline-state">
+                  <div className="webcam-offline-icon">📷</div>
+                  <div className="webcam-offline-text">Camera not active</div>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={onGetCameraAccess}
+                    style={{ marginTop: 8 }}
+                  >
+                    Enable Camera
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Fullscreen Check */}
-        <div className={`system-card req-card ${fullScreen ? 'card-success' : ''}`}>
-          <div className="card-icon-area">
-            <div className={`status-icon-bubble ${fullScreen ? 'bubble-online' : 'bubble-neutral'}`}>
-              🖥️
-            </div>
+        {/* Start exam box */}
+        <div className="setup-card">
+          <div className="setup-card-title">
+            <div className="setup-card-icon icon-green">🚀</div>
+            Begin Assessment
           </div>
-          <div className="card-body-area">
-            <div className="card-title-row">
-              <h4>2. Full Screen Mode</h4>
-              {fullScreen && <span className="pill-tag pill-green">Active</span>}
-            </div>
-            <p className="card-desc">
-              Assessment must run in full screen mode to prevent tab switching and unauthorized distractions.
-            </p>
+          <div className="start-exam-box">
+            <button
+              type="button"
+              id="btn-start-exam"
+              className="btn btn-success btn-xl"
+              disabled={!isReadyToStart}
+              onClick={onStartExam}
+            >
+              {isStarting ? (
+                <>
+                  <span className="spinner" />
+                  Starting Session…
+                </>
+              ) : (
+                <>
+                  Launch Examination
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </>
+              )}
+            </button>
+
+            {!isReadyToStart && !isStarting && (
+              <p className="start-hint">
+                Complete all {checks.length} checklist items above to enable the exam launch.
+              </p>
+            )}
 
             <button
               type="button"
-              className={`btn ${fullScreen ? 'btn-success' : 'btn-primary'}`}
-              disabled={fullScreen}
-              onClick={onEnableFullScreen}
+              className="btn btn-outline btn-sm"
+              onClick={onOpenRules}
+              style={{ width: '100%', justifyContent: 'center' }}
             >
-              {fullScreen ? '✓ Full Screen Enabled' : 'Enable Full Screen'}
+              📋 Read Exam Rules Before Starting
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Rules Notice */}
-      <div className="rules-strip">
-        <div className="rules-strip-text">
-          <span>ℹ️ Please review assessment rules before beginning. </span>
-          <button type="button" className="link-button" onClick={onOpenRules}>
-            View Exam Instructions & Guidelines
-          </button>
-        </div>
-      </div>
-
-      {/* Final Action Row */}
-      <div className="setup-bottom-bar">
-        <div className="checklist-status">
-          <span className={userId.trim() && name.trim() ? 'check-done' : 'check-pending'}>
-            {userId.trim() && name.trim() ? '✓ Profile' : '○ Candidate Info'}
-          </span>
-          <span className="dot-sep">•</span>
-          <span className={cameraEnabled ? 'check-done' : 'check-pending'}>
-            {cameraEnabled ? '✓ Camera' : '○ Camera'}
-          </span>
-          <span className="dot-sep">•</span>
-          <span className={fullScreen ? 'check-done' : 'check-pending'}>
-            {fullScreen ? '✓ Fullscreen' : '○ Fullscreen'}
-          </span>
-          <span className="dot-sep">•</span>
-          <span className={backendOnline ? 'check-done' : 'check-pending'}>
-            {backendOnline ? '✓ Backend' : '○ Backend'}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          id="btn-start-exam"
-          className="btn btn-primary btn-lg"
-          disabled={!isReadyToStart}
-          onClick={onStartExam}
-        >
-          {isStarting ? (
-            <span className="btn-loading">
-              <span className="spinner"></span> Starting Session...
-            </span>
-          ) : (
-            'Start Examination →'
-          )}
-        </button>
       </div>
     </div>
   );
 }
 
 PreExamSetup.propTypes = {
-  userId: PropTypes.string.isRequired,
-  setUserId: PropTypes.func.isRequired,
-  name: PropTypes.string.isRequired,
-  setName: PropTypes.func.isRequired,
-  cameraEnabled: PropTypes.bool.isRequired,
-  mediaStream: PropTypes.any,
-  videoRef: PropTypes.shape({ current: PropTypes.any }),
+  userId:            PropTypes.string.isRequired,
+  setUserId:         PropTypes.func.isRequired,
+  name:              PropTypes.string.isRequired,
+  setName:           PropTypes.func.isRequired,
+  cameraEnabled:     PropTypes.bool.isRequired,
+  mediaStream:       PropTypes.any,
+  videoRef:          PropTypes.shape({ current: PropTypes.any }),
   onGetCameraAccess: PropTypes.func.isRequired,
-  fullScreen: PropTypes.bool.isRequired,
+  fullScreen:        PropTypes.bool.isRequired,
   onEnableFullScreen: PropTypes.func.isRequired,
-  backendOnline: PropTypes.bool.isRequired,
-  onCheckBackend: PropTypes.func.isRequired,
-  onStartExam: PropTypes.func.isRequired,
-  isStarting: PropTypes.bool.isRequired,
-  errorMessage: PropTypes.string,
-  onOpenRules: PropTypes.func.isRequired,
+  backendOnline:     PropTypes.bool.isRequired,
+  onCheckBackend:    PropTypes.func.isRequired,
+  onStartExam:       PropTypes.func.isRequired,
+  isStarting:        PropTypes.bool.isRequired,
+  errorMessage:      PropTypes.string,
+  onOpenRules:       PropTypes.func.isRequired,
 };

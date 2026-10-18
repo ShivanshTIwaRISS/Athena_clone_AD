@@ -1,465 +1,457 @@
-// src/App.jsx — VEYRA Root Application
+// src/App.jsx — VEYRA Desktop Candidate Examination Platform
 import { useEffect, useRef, useState, useCallback } from 'react';
 import './App.css';
 
-// Services
-import {
-  checkBackendHealth,
-  getToken, setToken, setStoredUser, clearAuth,
-  signIn, firstRunSetup, getCurrentUser,
-  getExamQuestions, startExam, recordProctoringSnap,
-} from './services/api';
-
-// Views
-import AuthScreen from './components/AuthScreen';
-import AdminDashboard from './components/AdminDashboard';
-import ExamList from './components/ExamList';
-import QuestionBank from './components/QuestionBank';
-import ExamEditor from './components/ExamEditor';
+// Components
+import Header from './components/Header';
+import AvailableExams from './components/AvailableExams';
 import PreExamSetup from './components/PreExamSetup';
 import ExamArena from './components/ExamArena';
 import ExamResults from './components/ExamResults';
 import AttemptHistory from './components/AttemptHistory';
-import SettingsView from './components/SettingsView';
 import RulesModal from './components/RulesModal';
-import AppHeader from './components/AppHeader';
-import Sidebar from './components/Sidebar';
-import CandidateDashboard from './components/CandidateDashboard';
-import UserManagement from './components/UserManagement';
 
-// ── IPC bridge (Electron or null) ───────────────────────────────────────────
-const ipc = window.veyra || window.athena || null;
+// Services
+import {
+  initBackendPort,
+  checkBackendHealth,
+  startExam,
+  getAllQuestions,
+  getSessionDetails,
+} from './services/api';
 
-function App() {
-  // ── App init state ───────────────────────────────────────────────────────
-  const [appState, setAppState] = useState('loading'); // 'loading'|'auth'|'setup'|'app'
-  const [setupRequired, setSetupRequired] = useState(false);
+export default function App() {
+  // Navigation / Workflow Stages: 'AVAILABLE_EXAMS' | 'SETUP' | 'EXAM' | 'RESULTS' | 'HISTORY'
+  const [stage, setStage] = useState('AVAILABLE_EXAMS');
 
-  // ── Auth ─────────────────────────────────────────────────────────────────
-  const [currentUser, setCurrentUser] = useState(null);
+  // Candidate identity (persisted in localStorage for convenience)
+  const [userId, setUserId] = useState(() => localStorage.getItem('veyra_student_id') || 'student-101');
+  const [name, setName] = useState(() => localStorage.getItem('veyra_student_name') || 'Aditya Sharma');
 
-  // ── Navigation ───────────────────────────────────────────────────────────
-  // Admin views: 'dashboard'|'exams'|'exam-editor'|'questions'|'sessions'|'analytics'|'settings'|'users'
-  // Candidate views: 'candidate-dashboard'|'exam-setup'|'exam-arena'|'exam-results'|'history'
-  const [view, setView] = useState('dashboard');
-  const [viewParams, setViewParams] = useState({});
+  useEffect(() => {
+    if (userId) localStorage.setItem('veyra_student_id', userId);
+  }, [userId]);
 
-  // ── Exam flow ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (name) localStorage.setItem('veyra_student_name', name);
+  }, [name]);
+
+  // Selected Examination metadata
   const [selectedExam, setSelectedExam] = useState(null);
-  const [sessionId, setSessionId] = useState('');
-  const [sessionDuration, setSessionDuration] = useState(1800);
-  const [questionsList, setQuestionsList] = useState([]);
-  const [resultData, setResultData] = useState(null);
-  const [finalSessionData, setFinalSessionData] = useState(null);
 
-  // ── Proctoring ───────────────────────────────────────────────────────────
+  // Hardware & Proctoring states
   const [cameraEnabled, setCameraEnabled] = useState(false);
   const [mediaStream, setMediaStream] = useState(null);
-  const [consentGiven, setConsentGiven] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
+  const [timer, setTimer] = useState(0);
   const [snapshotCount, setSnapshotCount] = useState(0);
   const [screenSnapshotCount, setScreenSnapshotCount] = useState(0);
 
-  // ── Backend ──────────────────────────────────────────────────────────────
+  // Backend Integration states
   const [backendOnline, setBackendOnline] = useState(false);
+  const [sessionId, setSessionId] = useState('');
+  const [questionsList, setQuestionsList] = useState([]);
   const [isStarting, setIsStarting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // ── Misc ─────────────────────────────────────────────────────────────────
+  // Results & Session Details
+  const [resultData, setResultData] = useState(null);
+  const [finalSessionData, setFinalSessionData] = useState(null);
+
+  // Rules Modal
   const [rulesOpen, setRulesOpen] = useState(false);
 
+  // Refs
   const videoRef = useRef(null);
-  const mediaStreamRef = useRef(null);
+  const webTimerIntervalRef = useRef(null);
   const webSnapshotIntervalRef = useRef(null);
+  const mediaStreamRef = useRef(null);
 
-  // ── Video sync ───────────────────────────────────────────────────────────
+  /**
+   * Keep video element attached to mediaStream across component mounts/unmounts
+   */
   useEffect(() => {
-    if (videoRef.current && mediaStream && videoRef.current.srcObject !== mediaStream) {
-      videoRef.current.srcObject = mediaStream;
+    if (videoRef.current && mediaStream) {
+      if (videoRef.current.srcObject !== mediaStream) {
+        videoRef.current.srcObject = mediaStream;
+      }
       videoRef.current.play().catch(() => {});
     }
-  }, [view, mediaStream]);
+  }, [stage, mediaStream]);
 
-  // ── Camera snap capture ───────────────────────────────────────────────────
-  const saveVideoScreenShots = useCallback(async () => {
-    const video = videoRef.current;
-    const stream = mediaStreamRef.current || (video ? video.srcObject : null);
-    if (!video && !stream) return;
-
-    let buf = null;
-    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.8));
-          if (blob) buf = await blob.arrayBuffer();
-        }
-      } catch { /* ignore */ }
-    }
-
-    if (!buf && stream) {
-      try {
-        const track = stream.getVideoTracks()[0];
-        if (track && typeof ImageCapture !== 'undefined') {
-          const ic = new ImageCapture(track);
-          const blob = await ic.takePhoto();
-          buf = await blob.arrayBuffer();
-        }
-      } catch { /* ignore */ }
-    }
-
-    if (buf) {
-      if (ipc?.storeCameraSnap) ipc.storeCameraSnap(buf);
-      else if (ipc?.storeCameraSnapImageOnDisk) ipc.storeCameraSnapImageOnDisk(buf);
-      setSnapshotCount((p) => p + 1);
-
-      // Report to backend
-      if (sessionId) {
-        recordProctoringSnap(sessionId, 'camera').catch(() => {});
-      }
-    }
-  }, [sessionId]);
-
-  // ── IPC listeners ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!ipc) return;
-    const removers = [];
-
-    if (ipc.registerListenerForCameraSnapFromMain) {
-      removers.push(ipc.registerListenerForCameraSnapFromMain(() => saveVideoScreenShots()));
-    }
-    if (ipc.registerCameraSnapListener) {
-      removers.push(ipc.registerCameraSnapListener(() => saveVideoScreenShots()));
-    }
-    if (ipc.registerListenerForScreenSnapFromMain) {
-      removers.push(ipc.registerListenerForScreenSnapFromMain(() => {
-        setScreenSnapshotCount((p) => p + 1);
-        if (sessionId) recordProctoringSnap(sessionId, 'screen').catch(() => {});
-      }));
-    }
-    if (ipc.registerScreenSnapListener) {
-      removers.push(ipc.registerScreenSnapListener(() => {
-        setScreenSnapshotCount((p) => p + 1);
-      }));
-    }
-
-    return () => {
-      removers.forEach((r) => typeof r === 'function' && r());
-      if (webSnapshotIntervalRef.current) clearInterval(webSnapshotIntervalRef.current);
-    };
-  }, [saveVideoScreenShots, sessionId]);
-
-  // ── Health check ──────────────────────────────────────────────────────────
+  /**
+   * Check Backend Server Connectivity (GET /) and preload question bank
+   */
   const verifyBackend = useCallback(async () => {
     try {
-      const health = await checkBackendHealth();
+      await checkBackendHealth();
       setBackendOnline(true);
       setErrorMessage(null);
-      return health;
+      try {
+        const questions = await getAllQuestions();
+        if (Array.isArray(questions)) {
+          setQuestionsList(questions);
+        }
+      } catch (err) {
+        console.warn('Could not preload questions yet:', err);
+      }
     } catch {
       setBackendOnline(false);
-      return null;
     }
   }, []);
 
-  // ── Initial app boot ──────────────────────────────────────────────────────
+  // Initialise dynamic port from Electron IPC (or fall back to 3000 in browser)
   useEffect(() => {
-    async function boot() {
-      setAppState('loading');
-      try {
-        const health = await checkBackendHealth();
-        setBackendOnline(true);
-
-        // Check if first-run setup needed
-        if (health.setupRequired) {
-          setSetupRequired(true);
-          setAppState('auth');
-          return;
-        }
-
-        // Check if already authenticated
-        const token = getToken();
-        if (token) {
-          try {
-            const user = await getCurrentUser();
-            setCurrentUser(user);
-            setStoredUser(user);
-            setAppState('app');
-            setView(user.role === 'admin' ? 'dashboard' : 'candidate-dashboard');
-            return;
-          } catch {
-            clearAuth();
-          }
-        }
-
-        setAppState('auth');
-      } catch {
-        setBackendOnline(false);
-        setAppState('auth'); // Show auth screen with offline warning
-      }
-    }
-    boot();
+    initBackendPort(3000);
   }, []);
 
-  // Periodic health ping
   useEffect(() => {
+    // Small delay to let port resolve before first health check
+    const t = setTimeout(() => verifyBackend(), 400);
     const interval = setInterval(() => verifyBackend(), 15000);
-    return () => clearInterval(interval);
+    return () => { clearTimeout(t); clearInterval(interval); };
   }, [verifyBackend]);
 
-  // ── Auth handlers ─────────────────────────────────────────────────────────
-  async function handleSignIn({ email, password }) {
-    const res = await signIn({ email, password });
-    setToken(res.token);
-    setStoredUser(res.user);
-    setCurrentUser(res.user);
-    setAppState('app');
-    setView(res.user.role === 'admin' ? 'dashboard' : 'candidate-dashboard');
-  }
-
-  async function handleFirstRunSetup({ name, email, password }) {
-    const res = await firstRunSetup({ name, email, password });
-    setToken(res.token);
-    setStoredUser(res.user);
-    setCurrentUser(res.user);
-    setSetupRequired(false);
-    setAppState('app');
-    setView('dashboard');
-  }
-
-  function handleSignOut() {
-    clearAuth();
-    setCurrentUser(null);
-    stopProctoringFlow();
-    setView('dashboard');
-    setAppState('auth');
-  }
-
-  // ── Proctoring helpers ────────────────────────────────────────────────────
-  async function getCameraAccess() {
+  /**
+   * Request webcam access for proctoring verification
+   */
+  const getCameraAccess = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
       });
+
       mediaStreamRef.current = stream;
       setMediaStream(stream);
+      setCameraEnabled(true);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(() => {});
       }
-      setCameraEnabled(true);
-      setErrorMessage(null);
     } catch (err) {
-      setErrorMessage(`Camera access failed: ${err.message}. Please allow webcam permission.`);
+      console.error('Camera access rejected or unavailable:', err);
+      setCameraEnabled(false);
+      setErrorMessage('Camera access was denied. Please allow webcam permissions to continue.');
     }
-  }
+  };
 
-  function stopProctoringFlow() {
-    if (ipc?.stopProctoring) ipc.stopProctoring();
-    else if (ipc?.stopProctoringOnMain) ipc.stopProctoringOnMain();
+  /**
+   * Request Fullscreen mode
+   */
+  const enableFullScreen = () => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
+    setFullScreen(true);
+  };
+
+  // Sync fullscreen state with browser events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setFullScreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  /**
+   * Capture a webcam frame using HTML5 canvas fallback
+   */
+  const captureWebcamBlob = useCallback(async () => {
+    const vid = videoRef.current;
+    if (!vid || vid.readyState < 2) return null;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = vid.videoWidth || 640;
+      canvas.height = vid.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
+      });
+    } catch (err) {
+      console.warn('Webcam canvas capture error:', err);
+      return null;
+    }
+  }, []);
+
+  /**
+   * Capture and persist proctoring frames
+   */
+  const saveVideoScreenShots = useCallback(async () => {
+    const bridge = window.veyra || window.athena;
+
+    // 1. Capture webcam frame
+    try {
+      const blob = await captureWebcamBlob();
+      if (blob) {
+        const arrayBuf = await blob.arrayBuffer();
+        if (bridge?.storeCameraSnap || bridge?.storeCameraSnapImageOnDisk) {
+          const fn = bridge.storeCameraSnap || bridge.storeCameraSnapImageOnDisk;
+          await fn(arrayBuf);
+        }
+        setSnapshotCount((c) => c + 1);
+      }
+    } catch (err) {
+      console.warn('Webcam snapshot error:', err);
+    }
+
+    // 2. Capture desktop screen
+    try {
+      if (bridge?.captureScreen || bridge?.captureScreenSnap) {
+        const fn = bridge.captureScreen || bridge.captureScreenSnap;
+        await fn();
+        setScreenSnapshotCount((c) => c + 1);
+      }
+    } catch (err) {
+      console.warn('Screen snapshot capture error:', err);
+    }
+  }, [captureWebcamBlob]);
+
+  /**
+   * Stop all proctoring intervals and media tracks
+   */
+  const stopProctoringFlow = useCallback(() => {
+    const bridge = window.veyra || window.athena;
+    if (bridge?.stopProctoring || bridge?.stopProctoringOnMain) {
+      const fn = bridge.stopProctoring || bridge.stopProctoringOnMain;
+      try {
+        fn();
+      } catch (err) {
+        console.warn('Failed to stop proctoring on bridge:', err);
+      }
+    }
+
+    if (webTimerIntervalRef.current) {
+      clearInterval(webTimerIntervalRef.current);
+      webTimerIntervalRef.current = null;
+    }
     if (webSnapshotIntervalRef.current) {
       clearInterval(webSnapshotIntervalRef.current);
       webSnapshotIntervalRef.current = null;
     }
+
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     }
     setMediaStream(null);
     setCameraEnabled(false);
-    setConsentGiven(false);
-  }
+  }, []);
 
-  // ── Exam start ────────────────────────────────────────────────────────────
-  async function handleStartExam(examId) {
+  /**
+   * Register Electron IPC listeners for timer ticks & snapshot signals
+   */
+  useEffect(() => {
+    const bridge = window.veyra || window.athena;
+    if (!bridge) return;
+
+    const removers = [];
+
+    // Timer listener
+    const timerFn = bridge.registerTimerListener || bridge.registerListenerForTimerTickFromMain;
+    if (timerFn) {
+      const rm = timerFn((seconds) => {
+        setTimer(typeof seconds === 'number' ? Math.round(seconds) : seconds);
+      });
+      if (rm) removers.push(rm);
+    }
+
+    // Camera shot listener
+    const camFn = bridge.registerCameraSnapListener || bridge.registerListenerForCameraSnapFromMain;
+    if (camFn) {
+      const rm = camFn(async () => {
+        await saveVideoScreenShots();
+      });
+      if (rm) removers.push(rm);
+    }
+
+    // Screen snap listener
+    const screenFn = bridge.registerScreenSnapListener || bridge.registerListenerForScreenSnapFromMain;
+    if (screenFn) {
+      const rm = screenFn(() => {
+        setScreenSnapshotCount((c) => c + 1);
+      });
+      if (rm) removers.push(rm);
+    }
+
+    return () => {
+      removers.forEach((r) => typeof r === 'function' && r());
+    };
+  }, [saveVideoScreenShots]);
+
+  /**
+   * Start Examination Session
+   */
+  const handleStartExam = async () => {
+    if (!userId.trim() || !name.trim()) {
+      setErrorMessage('Please enter both your Student ID and Full Name.');
+      return;
+    }
+
     try {
       setIsStarting(true);
       setErrorMessage(null);
 
-      const startRes = await startExam(examId);
-      const activeSessionId = startRes.sessionId;
-      setSessionId(activeSessionId);
-      setSessionDuration(startRes.durationSeconds || 1800);
+      // 1. Initialize session on backend (POST /exam/start)
+      const startRes = await startExam(userId.trim(), name.trim());
+      const newSessionId = startRes?.sessionId;
 
-      const qList = await getExamQuestions(examId);
-      setQuestionsList(qList);
-
-      // Start proctoring
-      if (ipc?.startProctoring) {
-        await ipc.startProctoring({ webcamInterval: 5000, screenInterval: 10000 });
-      } else if (ipc?.startTimerOnMain) {
-        await ipc.startTimerOnMain();
-      } else {
-        // Browser fallback
-        if (webSnapshotIntervalRef.current) clearInterval(webSnapshotIntervalRef.current);
-        webSnapshotIntervalRef.current = setInterval(() => saveVideoScreenShots(), 5000);
+      if (!newSessionId) {
+        throw new Error('Backend did not return a valid session ID');
       }
 
+      setSessionId(newSessionId);
+      setTimer(0);
       setSnapshotCount(0);
       setScreenSnapshotCount(0);
 
-      // Immediate first snap
-      setTimeout(() => saveVideoScreenShots(), 1000);
+      // 2. Fetch fresh question list
+      const questions = await getAllQuestions();
+      setQuestionsList(Array.isArray(questions) ? questions : []);
 
-      setView('exam-arena');
+      // 3. Start proctoring via Electron IPC or web timer fallback
+      const bridge = window.veyra || window.athena;
+      if (bridge?.startProctoring || bridge?.startTimerOnMain) {
+        const fn = bridge.startProctoring || bridge.startTimerOnMain;
+        await fn();
+      } else {
+        // Browser fallback: 1s timer
+        webTimerIntervalRef.current = setInterval(() => {
+          setTimer((t) => t + 1);
+        }, 1000);
+
+        // Periodic snapshot: every 10s
+        webSnapshotIntervalRef.current = setInterval(() => {
+          saveVideoScreenShots();
+        }, 10000);
+      }
+
+      // Initial baseline snapshot
+      setTimeout(() => {
+        saveVideoScreenShots();
+      }, 1000);
+
+      // 4. Transition to Exam Arena
+      setStage('EXAM');
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to start exam. Check backend connection.');
+      console.error('Error starting examination:', err);
+      setErrorMessage(err.message || 'Failed to start examination session. Is the backend running?');
     } finally {
       setIsStarting(false);
     }
-  }
+  };
 
-  // ── Exam submitted ─────────────────────────────────────────────────────────
-  function handleExamSubmitted({ result, session }) {
+  /**
+   * Exam Submission Handler
+   */
+  const handleExamSubmitted = async (submissionResult) => {
     stopProctoringFlow();
-    setResultData(result);
-    setFinalSessionData(session);
-    setView('exam-results');
-  }
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
-  function navigate(newView, params = {}) {
-    setViewParams(params);
-    setView(newView);
-    setErrorMessage(null);
-  }
+    try {
+      if (sessionId) {
+        const sessionDetails = await getSessionDetails(sessionId);
+        setFinalSessionData(sessionDetails);
+      }
+    } catch (err) {
+      console.warn('Could not fetch final session details:', err);
+    }
 
-  function handleStartExamSetup(exam) {
-    setSelectedExam(exam);
-    navigate('exam-setup');
-  }
+    setResultData(submissionResult);
+    setStage('RESULTS');
+  };
 
-  function handleRestartFlow() {
+  /**
+   * Return to Available Assessments
+   */
+  const handleRestartFlow = () => {
+    stopProctoringFlow();
     setSessionId('');
-    setQuestionsList([]);
     setResultData(null);
     setFinalSessionData(null);
-    stopProctoringFlow();
-    navigate(currentUser?.role === 'admin' ? 'dashboard' : 'candidate-dashboard');
-  }
+    setTimer(0);
+    setSnapshotCount(0);
+    setScreenSnapshotCount(0);
+    setErrorMessage(null);
+    setStage('AVAILABLE_EXAMS');
+    verifyBackend();
+  };
 
-  // ── Render: Loading ────────────────────────────────────────────────────────
-  if (appState === 'loading') {
-    return (
-      <div className="page-loader">
-        <div className="loader-logo">V</div>
-        <div className="loader-text">VEYRA</div>
-        <div className="loader-sub">Smart Assessments. Seamless Execution.</div>
-        <div className="loader-bar"><div className="loader-bar-fill" /></div>
-      </div>
-    );
-  }
-
-  // ── Render: Auth ───────────────────────────────────────────────────────────
-  if (appState === 'auth') {
-    return (
-      <AuthScreen
-        isSetup={setupRequired}
-        backendOnline={backendOnline}
-        onSignIn={handleSignIn}
-        onSetup={handleFirstRunSetup}
-        onRetryBackend={verifyBackend}
-      />
-    );
-  }
-
-  // ── Render: Application ───────────────────────────────────────────────────
-  const isCandidate = currentUser?.role === 'candidate';
-  const isAdmin = currentUser?.role === 'admin';
-  const isExamActive = view === 'exam-arena';
+  /**
+   * Select an assessment and proceed to verification
+   */
+  const handleSelectExam = (exam) => {
+    setSelectedExam(exam);
+    setStage('SETUP');
+  };
 
   return (
     <div className="app-shell">
-      <AppHeader
-        currentUser={currentUser}
-        view={view}
-        backendOnline={backendOnline}
+      {/* Top Header */}
+      <Header
+        stage={stage}
+        studentName={name}
+        userId={userId}
         sessionId={sessionId}
-        sessionDuration={sessionDuration}
-        onSignOut={handleSignOut}
+        timer={timer}
+        backendOnline={backendOnline}
         onOpenRules={() => setRulesOpen(true)}
-        isExamActive={isExamActive}
+        onNavigate={(newStage) => {
+          if (stage !== 'EXAM') {
+            setStage(newStage);
+          }
+        }}
       />
 
-      <div className="app-layout">
-        {/* Sidebar (hidden during exam) */}
-        {!isExamActive && (
-          <Sidebar
-            currentUser={currentUser}
-            view={view}
-            onNavigate={navigate}
+      {/* Main Content Area */}
+      <main className="app-main-content">
+        {/* Stage 1: Available Examinations */}
+        {stage === 'AVAILABLE_EXAMS' && (
+          <AvailableExams
+            questionsCount={questionsList.length}
+            backendOnline={backendOnline}
+            onSelectExam={handleSelectExam}
+            onNavigate={(target) => setStage(target)}
+            onOpenRules={() => setRulesOpen(true)}
           />
         )}
 
-        {/* Main Content */}
-        <main className="app-main-content">
+        {/* Stage 2: Pre-Exam Setup & Verification */}
+        {stage === 'SETUP' && (
+          <div>
+            <div className="d-flex align-center justify-between mb-3">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => setStage('AVAILABLE_EXAMS')}
+              >
+                ← Back to Available Assessments
+              </button>
+              {selectedExam && (
+                <span className="badge-pill badge-neutral">
+                  Assessment: <strong>{selectedExam.title}</strong>
+                </span>
+              )}
+            </div>
 
-          {/* ── Admin views ─────────────────────────────────────── */}
-          {isAdmin && view === 'dashboard' && (
-            <AdminDashboard
-              currentUser={currentUser}
-              onNavigate={navigate}
-            />
-          )}
-          {isAdmin && view === 'exams' && (
-            <ExamList
-              onNavigate={navigate}
-              onCreateExam={() => navigate('exam-editor', { mode: 'create' })}
-              onEditExam={(exam) => navigate('exam-editor', { mode: 'edit', exam })}
-            />
-          )}
-          {isAdmin && view === 'exam-editor' && (
-            <ExamEditor
-              mode={viewParams.mode || 'create'}
-              initialExam={viewParams.exam}
-              onDone={() => navigate('exams')}
-              onCancel={() => navigate('exams')}
-            />
-          )}
-          {isAdmin && view === 'questions' && (
-            <QuestionBank onNavigate={navigate} />
-          )}
-          {isAdmin && view === 'users' && (
-            <UserManagement onNavigate={navigate} />
-          )}
-          {isAdmin && view === 'analytics' && (
-            <AdminDashboard
-              currentUser={currentUser}
-              onNavigate={navigate}
-              showAnalytics
-            />
-          )}
-          {isAdmin && view === 'settings' && (
-            <SettingsView currentUser={currentUser} />
-          )}
-          {isAdmin && view === 'sessions' && (
-            <AttemptHistory
-              isAdmin
-              onNavigate={navigate}
-            />
-          )}
-
-          {/* ── Candidate views ──────────────────────────────────── */}
-          {isCandidate && view === 'candidate-dashboard' && (
-            <CandidateDashboard
-              currentUser={currentUser}
-              onStartExamSetup={handleStartExamSetup}
-              onNavigate={navigate}
-            />
-          )}
-          {view === 'exam-setup' && (
             <PreExamSetup
-              exam={selectedExam}
-              currentUser={currentUser}
+              userId={userId}
+              setUserId={setUserId}
+              name={name}
+              setName={setName}
               cameraEnabled={cameraEnabled}
               mediaStream={mediaStream}
               videoRef={videoRef}
-              consentGiven={consentGiven}
-              setConsentGiven={setConsentGiven}
               onGetCameraAccess={getCameraAccess}
+              fullScreen={fullScreen}
+              onEnableFullScreen={enableFullScreen}
               backendOnline={backendOnline}
               onCheckBackend={verifyBackend}
               onStartExam={handleStartExam}
@@ -467,48 +459,77 @@ function App() {
               errorMessage={errorMessage}
               onOpenRules={() => setRulesOpen(true)}
             />
-          )}
-          {view === 'exam-arena' && (
-            <ExamArena
-              sessionId={sessionId}
-              sessionDuration={sessionDuration}
-              questionsList={questionsList}
-              videoRef={videoRef}
-              mediaStream={mediaStream}
-              snapshotCount={snapshotCount}
-              screenSnapshotCount={screenSnapshotCount}
-              onCaptureSnapshot={saveVideoScreenShots}
-              onExamSubmitted={handleExamSubmitted}
-              onOpenRules={() => setRulesOpen(true)}
-            />
-          )}
-          {view === 'exam-results' && (
+          </div>
+        )}
+
+        {/* Stage 3: Timed Examination Arena */}
+        {stage === 'EXAM' && (
+          <ExamArena
+            sessionId={sessionId}
+            questionsList={questionsList}
+            videoRef={videoRef}
+            mediaStream={mediaStream}
+            timer={timer}
+            snapshotCount={snapshotCount}
+            screenSnapshotCount={screenSnapshotCount}
+            onCaptureManualSnapshot={saveVideoScreenShots}
+            onExamSubmitted={handleExamSubmitted}
+            onOpenRules={() => setRulesOpen(true)}
+          />
+        )}
+
+        {/* Stage 4: Results & Response Breakdown */}
+        {stage === 'RESULTS' && (
+          <div>
             <ExamResults
               resultData={resultData}
               sessionData={finalSessionData}
               questionsList={questionsList}
+              timer={timer}
               snapshotCount={snapshotCount}
               screenSnapshotCount={screenSnapshotCount}
               onRestart={handleRestartFlow}
-              onNavigate={navigate}
             />
-          )}
-          {view === 'history' && (
-            <AttemptHistory
-              isAdmin={isAdmin}
-              onNavigate={navigate}
-            />
-          )}
-          {view === 'settings' && !isAdmin && (
-            <SettingsView currentUser={currentUser} />
-          )}
 
-        </main>
-      </div>
+            <div className="d-flex justify-center gap-3 mt-4 mb-4">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleRestartFlow}
+              >
+                Take Another Assessment
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setStage('HISTORY')}
+              >
+                View Assessment History
+              </button>
+            </div>
+          </div>
+        )}
 
+        {/* Stage 5: Candidate Attempt History */}
+        {stage === 'HISTORY' && (
+          <AttemptHistory
+            userId={userId}
+            onNavigate={(target) => setStage(target)}
+            onReviewSession={(session) => {
+              setFinalSessionData(session);
+              setResultData({
+                attempted: session.attempted,
+                correct: session.correct,
+                wrong: session.wrong,
+              });
+              setStage('RESULTS');
+            }}
+          />
+        )}
+      </main>
+
+      {/* Rules & Guidelines Modal */}
       <RulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />
     </div>
   );
 }
-
-export default App;

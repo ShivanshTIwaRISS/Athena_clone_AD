@@ -8,6 +8,14 @@ import {
   submitExam,
 } from '../services/api';
 
+function formatTime(seconds) {
+  const s = Math.floor(Number(seconds) || 0);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  if (m > 0) return `${m}m ${sec.toString().padStart(2, '0')}s`;
+  return `${sec}s`;
+}
+
 export default function ExamArena({
   sessionId,
   questionsList,
@@ -20,9 +28,7 @@ export default function ExamArena({
   onExamSubmitted,
   onOpenRules,
 }) {
-  const [snapshotFeedback, setSnapshotFeedback] = useState(false);
-
-  // Ensure webcam stream is bound to video element when arena mounts
+  // Bind stream to video element
   useEffect(() => {
     if (videoRef?.current && mediaStream && videoRef.current.srcObject !== mediaStream) {
       videoRef.current.srcObject = mediaStream;
@@ -30,613 +36,361 @@ export default function ExamArena({
     }
   }, [videoRef, mediaStream]);
 
-  // Navigation & current question state
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState(null);
-  const [loadingQuestion, setLoadingQuestion] = useState(false);
+  const [loadingQ, setLoadingQ] = useState(false);
 
-  // Persistent Draft/Selected Answers across all questions: { [questionId]: optionIndex }
   const [draftAnswers, setDraftAnswers] = useState({});
-  const [autoSaveStatus, setAutoSaveStatus] = useState(null); // 'saving' | 'saved' | 'saved-local' | null
+  const [saveStatus, setSaveStatus] = useState(null); // 'saving'|'saved'|null
 
-  // Live session state (from GET /exam/session/:sessionId)
   const [sessionData, setSessionData] = useState(null);
-  const [syncingSession, setSyncingSession] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  // Submit confirmation modal state
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Filter for question palette: 'all' | 'unanswered' | 'answered'
-  const [paletteFilter, setPaletteFilter] = useState('all');
+  const currentMeta = questionsList[currentIndex] || null;
 
-  const currentQMeta = questionsList[currentQuestionIndex] || null;
-
-  // Load question data when current question index changes (GET /exam/mcq/:id)
+  // Fetch question on index change
   useEffect(() => {
-    let isMounted = true;
-    const qId = currentQMeta?.id;
-    if (!qId) return;
-
-    async function fetchQuestion() {
+    let alive = true;
+    if (!currentMeta?.id) return;
+    async function load() {
+      setLoadingQ(true);
+      setErrorMsg(null);
+      setSaveStatus(null);
       try {
-        setLoadingQuestion(true);
-        setErrorMessage(null);
-        setAutoSaveStatus(null);
-        const data = await getQuestionById(qId);
-        if (isMounted) {
-          setActiveQuestion(data);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setErrorMessage(err.message || 'Failed to fetch question details');
-        }
+        const data = await getQuestionById(currentMeta.id);
+        if (alive) setActiveQuestion(data);
+      } catch (e) {
+        if (alive) setErrorMsg(e.message || 'Failed to load question');
       } finally {
-        if (isMounted) {
-          setLoadingQuestion(false);
-        }
+        if (alive) setLoadingQ(false);
       }
     }
+    load();
+    return () => { alive = false; };
+  }, [currentMeta?.id]);
 
-    fetchQuestion();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentQMeta?.id]);
-
-  // Initial session progress load (GET /exam/session/:sessionId)
+  // Fetch initial session state
   useEffect(() => {
-    let isMounted = true;
+    let alive = true;
     if (!sessionId) return;
-
-    async function fetchSession() {
+    async function load() {
+      setSyncing(true);
       try {
-        setSyncingSession(true);
         const data = await getSessionDetails(sessionId);
-        if (isMounted) {
+        if (alive) {
           setSessionData(data);
-          // Initialize draft answers with existing session answers
-          if (data.answers && Array.isArray(data.answers)) {
-            const initialMap = {};
-            data.answers.forEach((ans) => {
-              initialMap[ans.questionId] = ans.selectedAnswer;
-            });
-            setDraftAnswers((prev) => ({ ...initialMap, ...prev }));
+          if (data.answers?.length) {
+            const map = {};
+            data.answers.forEach((a) => { map[a.questionId] = a.selectedAnswer; });
+            setDraftAnswers((prev) => ({ ...map, ...prev }));
           }
         }
-      } catch (err) {
-        console.error('Failed to sync session progress:', err);
-      } finally {
-        if (isMounted) {
-          setSyncingSession(false);
-        }
-      }
+      } catch (e) { console.error(e); }
+      finally { if (alive) setSyncing(false); }
     }
-
-    fetchSession();
-
-    return () => {
-      isMounted = false;
-    };
+    load();
+    return () => { alive = false; };
   }, [sessionId]);
 
-  /**
-   * Manual Refresh of Session Data (GET /exam/session/:sessionId)
-   */
-  const handleManualSync = async () => {
+  const syncSession = async () => {
     if (!sessionId) return;
+    setSyncing(true);
     try {
-      setSyncingSession(true);
       const data = await getSessionDetails(sessionId);
       setSessionData(data);
-    } catch (err) {
-      console.error('Failed to sync session progress:', err);
-    } finally {
-      setSyncingSession(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setSyncing(false); }
   };
 
-  // Check if current question has recorded answer in backend
-  const answeredRecord = sessionData?.answers?.find(
-    (ans) => ans.questionId === currentQMeta?.id
+  // Derived answer state
+  const backendAnswerIds = new Set(sessionData?.answers?.map((a) => a.questionId) || []);
+  const draftIds = new Set(
+    Object.entries(draftAnswers)
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([k]) => Number(k))
   );
+  const answeredIds = new Set([...backendAnswerIds, ...draftIds]);
+  const totalCount   = questionsList.length;
+  const answeredCount = answeredIds.size;
+  const progress     = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
 
-  // Active selected option is candidate's current draft choice or recorded answer
-  const currentQId = currentQMeta?.id;
-  const selectedOption = (currentQId !== undefined && draftAnswers[currentQId] !== undefined)
-    ? draftAnswers[currentQId]
-    : (answeredRecord ? answeredRecord.selectedAnswer : null);
+  const backendRecord = sessionData?.answers?.find((a) => a.questionId === currentMeta?.id);
+  const selectedOption =
+    currentMeta?.id !== undefined && draftAnswers[currentMeta.id] !== undefined
+      ? draftAnswers[currentMeta.id]
+      : backendRecord?.selectedAnswer ?? null;
 
-  /**
-   * Handle Option Selection with Auto-Save & Changeable Options
-   * 1. Updates persistent draft answers map across questions
-   * 2. Auto-saves directly to backend (updates answer if already selected)
-   * 3. Candidate can change their choice anytime during the test
-   */
-  const handleOptionSelect = async (optIndex) => {
+  const handleSelect = async (optIdx) => {
     if (!activeQuestion || !sessionId) return;
-
     const qId = activeQuestion.id;
-
-    // 1. Immediately update draft map in frontend state for instant UI update
-    setDraftAnswers((prev) => ({
-      ...prev,
-      [qId]: optIndex,
-    }));
-
-    // 2. Automatically save/update in backend via POST /exam/answer
+    setDraftAnswers((prev) => ({ ...prev, [qId]: optIdx }));
     try {
-      setAutoSaveStatus('saving');
-      setErrorMessage(null);
-
-      await submitAnswer(sessionId, qId, optIndex);
-
-      setAutoSaveStatus('saved');
-
-      // Refresh live backend session state
-      const updatedSession = await getSessionDetails(sessionId);
-      setSessionData(updatedSession);
-    } catch (err) {
-      console.warn(`Auto-save update note: ${err.message}`);
-      // Stored locally in draftAnswers and will be synced at final submit
-      setAutoSaveStatus('saved-local');
+      setSaveStatus('saving');
+      await submitAnswer(sessionId, qId, optIdx);
+      setSaveStatus('saved');
+      const updated = await getSessionDetails(sessionId);
+      setSessionData(updated);
+    } catch (e) {
+      console.warn('Auto-save error:', e.message);
+      setSaveStatus(null);
     }
   };
 
-  /**
-   * Handle Final Exam Submission (POST /exam/submit)
-   * Flushes all current selected/drafted options to backend before finalizing
-   */
-  const handleFinalSubmit = async () => {
+  const handleSubmit = async () => {
     if (!sessionId) return;
+    setSubmitting(true);
+    setErrorMsg(null);
     try {
-      setIsSubmittingFinal(true);
-      setErrorMessage(null);
-
-      // 1. Auto-flush all draft answers to backend ensuring latest selections are saved
-      const currentAnswers = sessionData?.answers || [];
-      const backendAnswerMap = new Map(currentAnswers.map((a) => [a.questionId, a.selectedAnswer]));
-
+      // Flush pending drafts
+      const backendMap = new Map((sessionData?.answers || []).map((a) => [a.questionId, a.selectedAnswer]));
       for (const [qIdStr, optIdx] of Object.entries(draftAnswers)) {
         const qId = Number(qIdStr);
-        if (optIdx !== null && optIdx !== undefined) {
-          // If not in backend or option changed, update it
-          if (backendAnswerMap.get(qId) !== optIdx) {
-            try {
-              await submitAnswer(sessionId, qId, optIdx);
-            } catch (err) {
-              console.warn(`Saving question ${qId} before submission:`, err);
-            }
-          }
+        if (optIdx !== null && optIdx !== undefined && backendMap.get(qId) !== optIdx) {
+          try { await submitAnswer(sessionId, qId, optIdx); } catch (e) { console.warn('Flush error:', e.message); }
         }
       }
-
-      // 2. Finalize exam in backend (POST /exam/submit)
       const response = await submitExam(sessionId);
       const finalSession = await getSessionDetails(sessionId);
-
-      onExamSubmitted({
-        result: response.result,
-        session: finalSession,
-      });
-    } catch (err) {
-      setErrorMessage(err.message || 'Failed to submit exam.');
-      setIsSubmittingFinal(false);
-      setShowSubmitModal(false);
+      onExamSubmitted({ result: response.result, session: finalSession });
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to submit exam');
+      setSubmitting(false);
+      setShowConfirm(false);
     }
   };
 
-  const answeredQuestionIds = new Set(
-    sessionData?.answers?.map((ans) => ans.questionId) || []
-  );
-
-  // Consider a question answered if selected in draft or confirmed in backend
-  const activeAnsweredOrDraftIds = new Set([
-    ...answeredQuestionIds,
-    ...Object.keys(draftAnswers)
-      .filter((k) => draftAnswers[k] !== null && draftAnswers[k] !== undefined)
-      .map(Number),
-  ]);
-
-  const filteredQuestions = questionsList.filter((q) => {
-    const isAnswered = activeAnsweredOrDraftIds.has(q.id);
-    if (paletteFilter === 'answered') return isAnswered;
-    if (paletteFilter === 'unanswered') return !isAnswered;
-    return true;
-  });
-
-  const totalCount = questionsList.length;
-  const answeredCount = activeAnsweredOrDraftIds.size;
-  const progressPercent = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0;
+  const optLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   return (
     <div className="exam-arena-container">
-      {/* Top Telemetry & Control Bar */}
-      <div className="arena-top-bar">
-        <div className="telemetry-left">
-          <div className="session-id-pill" title="Active Exam Session">
-            <span className="pill-dot"></span>
-            <span className="session-label">Session:</span>
-            <code>{sessionId}</code>
+      {/* ── Main question area */}
+      <div className="exam-main-area">
+        {/* Error */}
+        {errorMsg && (
+          <div className="alert alert-error">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{errorMsg}</span>
+            <button type="button" style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 16 }} onClick={() => setErrorMsg(null)}>×</button>
           </div>
-          <div className="progress-summary">
-            <span>Answered: <strong>{answeredCount}</strong> of {totalCount}</span>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${progressPercent}%` }}></div>
-            </div>
-            <span className="progress-pct">{progressPercent}%</span>
-          </div>
-        </div>
+        )}
 
-        <div className="telemetry-right">
-          <button
-            type="button"
-            className="btn btn-outline btn-sm sync-btn"
-            onClick={handleManualSync}
-            disabled={syncingSession}
-            title="Fetch latest session state from GET /exam/session/:sessionId"
-          >
-            {syncingSession ? 'Syncing...' : '🔄 Sync Progress'}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-danger btn-sm submit-trigger-btn"
-            onClick={() => setShowSubmitModal(true)}
-          >
-            Finish & Submit Exam
-          </button>
-        </div>
-      </div>
-
-      {errorMessage && (
-        <div className="alert-banner error-banner">
-          <span>⚠️ {errorMessage}</span>
-          <button type="button" className="close-inline" onClick={() => setErrorMessage(null)}>✕</button>
-        </div>
-      )}
-
-      {/* Main Layout: 3 Columns on desktop */}
-      <div className="arena-main-grid">
-        {/* Left Column: Question Palette Navigation */}
-        <aside className="question-palette-sidebar">
-          <div className="palette-header">
-            <h3>Question Palette</h3>
-            <span className="palette-count">{totalCount} Total</span>
+        {/* Question Card */}
+        <div className="question-card">
+          {/* Top bar */}
+          <div className="question-number-bar">
+            <span className="q-num-tag">Question {currentIndex + 1} of {totalCount}</span>
+            <span className={`q-status-tag ${selectedOption !== null ? 'q-status-answered' : 'q-status-unanswered'}`}>
+              {selectedOption !== null ? `✓ Option ${optLetters[selectedOption]} selected` : 'Not answered'}
+            </span>
           </div>
 
-          <div className="palette-filters">
-            <button
-              type="button"
-              className={`filter-chip ${paletteFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setPaletteFilter('all')}
-            >
-              All ({totalCount})
-            </button>
-            <button
-              type="button"
-              className={`filter-chip ${paletteFilter === 'unanswered' ? 'active' : ''}`}
-              onClick={() => setPaletteFilter('unanswered')}
-            >
-              Unanswered ({totalCount - answeredCount})
-            </button>
-            <button
-              type="button"
-              className={`filter-chip ${paletteFilter === 'answered' ? 'active' : ''}`}
-              onClick={() => setPaletteFilter('answered')}
-            >
-              Done ({answeredCount})
-            </button>
-          </div>
-
-          <div className="palette-grid">
-            {filteredQuestions.map((q) => {
-              const originalIndex = questionsList.findIndex((item) => item.id === q.id);
-              const isSelected = draftAnswers[q.id] !== undefined && draftAnswers[q.id] !== null;
-              const isConfirmed = answeredQuestionIds.has(q.id);
-              const isAnswered = isSelected || isConfirmed;
-              const isCurrent = originalIndex === currentQuestionIndex;
-
-              return (
-                <button
-                  key={q.id}
-                  type="button"
-                  className={`palette-item-btn ${isCurrent ? 'current' : ''} ${isAnswered ? 'answered' : 'unanswered'}`}
-                  onClick={() => setCurrentQuestionIndex(originalIndex)}
-                  title={`Question ${originalIndex + 1}: ${isAnswered ? 'Answered / Selected (Click to view or change)' : 'Not Answered'}`}
-                >
-                  <span className="q-number">{originalIndex + 1}</span>
-                  {isAnswered && <span className="check-mark">✓</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="palette-legend">
-            <div className="legend-item">
-              <span className="legend-chip chip-current"></span>
-              <span>Current</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-chip chip-answered"></span>
-              <span>Answered (Changeable)</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-chip chip-unanswered"></span>
-              <span>Unanswered</span>
-            </div>
-          </div>
-        </aside>
-
-        {/* Center Column: Question Detail & Options Workspace */}
-        <main className="question-workspace">
-          {loadingQuestion ? (
-            <div className="workspace-loading">
-              <div className="spinner"></div>
-              <p>Fetching Question {currentQuestionIndex + 1} from backend...</p>
+          {/* Question text / loading */}
+          {loadingQ ? (
+            <div style={{ padding: '30px 0', textAlign: 'center' }}>
+              <div className="spinner" style={{ margin: '0 auto 12px', width: 24, height: 24 }} />
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Loading question…</p>
             </div>
           ) : activeQuestion ? (
-            <div className="question-card">
-              {/* Question Top Meta */}
-              <div className="q-card-header">
-                <div className="q-badge">
-                  Question {currentQuestionIndex + 1} of {totalCount}
-                </div>
-                <div className="q-status-badge">
-                  {selectedOption !== null ? (
-                    <span className="tag-autosaved">
-                      ⚡ Option {String.fromCharCode(65 + selectedOption)} Selected (Auto-saved)
-                    </span>
-                  ) : (
-                    <span className="tag-open">✏️ Select an Option</span>
-                  )}
-                </div>
+            <>
+              <p className="question-text">{activeQuestion.question}</p>
+              <div className="options-list">
+                {activeQuestion.options?.map((text, i) => (
+                  <div
+                    key={i}
+                    className={`option-item ${selectedOption === i ? 'selected' : ''} ${saveStatus === 'saving' && selectedOption === i ? 'saving' : ''}`}
+                    onClick={() => handleSelect(i)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSelect(i)}
+                    aria-pressed={selectedOption === i}
+                  >
+                    <span className="option-letter">{optLetters[i] || i + 1}</span>
+                    <span className="option-text">{text}</span>
+                    {selectedOption === i && (
+                      <span className="option-check">✓</span>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              {/* Question Text */}
-              <div className="q-text-box">
-                <h2>{activeQuestion.question}</h2>
-              </div>
-
-              {/* Multiple Choice Options (Fully Interactive & Changeable anytime) */}
-              <div className="options-container">
-                {activeQuestion.options?.map((optionText, optIndex) => {
-                  const isSelected = selectedOption === optIndex;
-                  const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                  const letter = optionLetters[optIndex] || `${optIndex + 1}`;
-
-                  return (
-                    <label
-                      key={optIndex}
-                      className={`option-card ${isSelected ? 'selected' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${activeQuestion.id}-options`}
-                        checked={isSelected}
-                        onChange={() => handleOptionSelect(optIndex)}
-                        className="option-radio-input"
-                      />
-                      <div className="option-letter-badge">{letter}</div>
-                      <div className="option-content-text">{optionText}</div>
-                      {isSelected && (
-                        <div className="option-autosaved-badge">✓ Selected</div>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-
-              {/* Auto-save status feedback banner */}
-              {autoSaveStatus === 'saving' && (
-                <div className="auto-save-banner banner-saving">
-                  <span className="spinner-sm"></span> Updating answer in backend...
+              {/* Auto-save feedback */}
+              {saveStatus === 'saving' && (
+                <div className="alert alert-info" style={{ marginTop: 12 }}>
+                  <span className="spinner" style={{ width: 13, height: 13 }} />
+                  <span>Saving answer…</span>
                 </div>
               )}
-              {autoSaveStatus === 'saved' && (
-                <div className="auto-save-banner banner-saved">
-                  ✓ Answer auto-saved to backend (You can change your selection anytime).
+              {saveStatus === 'saved' && (
+                <div className="alert alert-success" style={{ marginTop: 12 }}>
+                  ✓ Answer auto-saved — you can change your selection at any time.
                 </div>
               )}
-
-              {/* Action Toolbar */}
-              <div className="q-action-toolbar">
-                <div className="nav-actions-left">
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    disabled={currentQuestionIndex === 0}
-                    onClick={() => setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))}
-                  >
-                    ← Previous
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    disabled={currentQuestionIndex === totalCount - 1}
-                    onClick={() => setCurrentQuestionIndex((prev) => Math.min(totalCount - 1, prev + 1))}
-                  >
-                    Next →
-                  </button>
-                </div>
-
-                <div className="nav-actions-right">
-                  {selectedOption !== null ? (
-                    <div className="autosaved-note">
-                      ⚡ Answer saved • Click any option to switch answer
-                    </div>
-                  ) : (
-                    <div className="hint-note">
-                      Click any option above to select (auto-saves instantly)
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            </>
           ) : (
-            <div className="workspace-empty">
-              <p>Select a question from the palette on the left.</p>
-            </div>
+            <p style={{ color: 'var(--text-muted)' }}>Select a question from the palette.</p>
           )}
-        </main>
 
-        {/* Right Column: Live Proctor & Real-Time Stats */}
-        <aside className="proctor-sidebar">
-          {/* Live Webcam Widget */}
-          <div className={`proctor-card camera-proctor-card ${snapshotFeedback ? 'snapshot-flash' : ''}`}>
-            <div className="proctor-card-header">
-              <div className="live-rec-indicator">
-                <span className="rec-dot"></span>
-                <span>LIVE PROCTORING</span>
-              </div>
-              <div className="snapshot-tags-wrap">
-                <span className="snapshot-tag" title="Webcam frames captured">📹 {snapshotCount} cam</span>
-                {screenSnapshotCount > 0 && (
-                  <span className="snapshot-tag tag-screen" title="Screen captures saved">🖥️ {screenSnapshotCount} scr</span>
-                )}
-              </div>
-            </div>
-
-            <div className="proctor-video-wrap">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="proctor-feed-element"
-              />
-            </div>
-
-            <div className="proctor-feed-caption">
-              <span>Proctor snapshots saved to <code>app/user-camera-snap/</code> & <code>app/user-screen-snap/</code></span>
-            </div>
-
-            {onCaptureManualSnapshot && (
-              <div className="proctor-actions-wrap" style={{ marginTop: '0.65rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm btn-block"
-                  onClick={async () => {
-                    setSnapshotFeedback(true);
-                    await onCaptureManualSnapshot();
-                    setTimeout(() => setSnapshotFeedback(false), 600);
-                  }}
-                >
-                  📸 Capture Snapshot Now
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Real-time Session Metrics Card */}
-          <div className="proctor-card session-telemetry-card">
-            <h4>Live Session Stats</h4>
-            <div className="stats-mini-grid">
-              <div className="stat-box">
-                <span className="stat-label">Answered</span>
-                <span className="stat-val text-green">{answeredCount}</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-label">Remaining</span>
-                <span className="stat-val">{totalCount - answeredCount}</span>
-              </div>
-              <div className="stat-box">
-                <span className="stat-label">Elapsed</span>
-                <span className="stat-val">{timer || '0'}s</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Rules Button */}
-          <div className="proctor-card rules-card">
+          {/* Navigation */}
+          <div className="exam-nav-row" style={{ marginTop: 24 }}>
             <button
               type="button"
-              className="btn btn-outline btn-block"
-              onClick={onOpenRules}
+              className="btn btn-outline"
+              disabled={currentIndex === 0}
+              onClick={() => setCurrentIndex((p) => Math.max(0, p - 1))}
             >
-              📜 Review Exam Rules
+              ← Previous
+            </button>
+            <span className="exam-nav-center">
+              {answeredCount} answered · {totalCount - answeredCount} remaining
+            </span>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={currentIndex === totalCount - 1}
+              onClick={() => setCurrentIndex((p) => Math.min(totalCount - 1, p + 1))}
+            >
+              Next →
             </button>
           </div>
-        </aside>
+        </div>
+
+        {/* Submit trigger */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={syncSession}
+            disabled={syncing}
+          >
+            {syncing ? 'Syncing…' : '↻ Sync'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => setShowConfirm(true)}
+          >
+            Submit Exam
+          </button>
+        </div>
       </div>
 
-      {/* Confirmation Modal Before Final Submission */}
-      {showSubmitModal && (
-        <div className="modal-backdrop" onClick={() => !isSubmittingFinal && setShowSubmitModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title-wrap">
-                <div className="modal-icon">⚠️</div>
-                <div>
-                  <h3>Confirm Exam Submission</h3>
-                  <p className="modal-subtitle">Ready to finalize your assessment?</p>
-                </div>
-              </div>
+      {/* ── Sidebar */}
+      <div className="exam-sidebar">
+        {/* Progress */}
+        <div className="sidebar-card">
+          <div className="sidebar-card-title">Progress</div>
+          <div className="exam-progress-bar-track">
+            <div className="exam-progress-bar-fill" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="progress-counts">
+            <span>{answeredCount} answered</span>
+            <span>{progress}%</span>
+          </div>
+        </div>
+
+        {/* Question palette */}
+        <div className="sidebar-card">
+          <div className="sidebar-card-title">Question Palette</div>
+          <div className="question-palette">
+            {questionsList.map((q, i) => (
               <button
+                key={q.id}
                 type="button"
-                className="modal-close-btn"
-                disabled={isSubmittingFinal}
-                onClick={() => setShowSubmitModal(false)}
+                className={`palette-btn ${i === currentIndex ? 'current' : ''} ${answeredIds.has(q.id) ? 'answered' : ''}`}
+                onClick={() => setCurrentIndex(i)}
+                title={`Q${i + 1}${answeredIds.has(q.id) ? ' (answered)' : ''}`}
               >
-                ✕
+                {i + 1}
               </button>
-            </div>
+            ))}
+          </div>
+        </div>
 
+        {/* Webcam mini */}
+        <div className="sidebar-card">
+          <div className="sidebar-card-title">Live Proctoring</div>
+          <div className="webcam-mini-wrap">
+            {mediaStream ? (
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div className="webcam-mini-placeholder">Camera offline</div>
+            )}
+          </div>
+          <div className="proctor-stats" style={{ marginTop: 10 }}>
+            <div className="proctor-stat-row">
+              <span className="proctor-stat-label">Webcam frames</span>
+              <span className="proctor-stat-value">{snapshotCount}</span>
+            </div>
+            <div className="proctor-stat-row">
+              <span className="proctor-stat-label">Screen captures</span>
+              <span className="proctor-stat-value">{screenSnapshotCount}</span>
+            </div>
+            <div className="proctor-stat-row">
+              <span className="proctor-stat-label">Elapsed time</span>
+              <span className="proctor-stat-value">{formatTime(timer)}</span>
+            </div>
+          </div>
+          {onCaptureManualSnapshot && (
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              style={{ width: '100%', justifyContent: 'center', marginTop: 10 }}
+              onClick={onCaptureManualSnapshot}
+            >
+              📸 Capture Now
+            </button>
+          )}
+        </div>
+
+        {/* Rules */}
+        <div className="sidebar-card">
+          <button type="button" className="btn btn-outline btn-sm" style={{ width: '100%', justifyContent: 'center' }} onClick={onOpenRules}>
+            📋 View Rules
+          </button>
+        </div>
+      </div>
+
+      {/* ── Submit Confirmation Modal */}
+      {showConfirm && (
+        <div className="modal-overlay" onClick={() => !submitting && setShowConfirm(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <span className="modal-title">Confirm Submission</span>
+              <button type="button" className="modal-close" disabled={submitting} onClick={() => setShowConfirm(false)}>×</button>
+            </div>
             <div className="modal-body">
-              <div className="submit-summary-box">
-                <div className="summary-item">
-                  <span>Total Questions:</span>
-                  <strong>{totalCount}</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '14px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)' }}>{totalCount}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 3 }}>Total</div>
                 </div>
-                <div className="summary-item">
-                  <span>Answered / Selected Questions:</span>
-                  <strong className="text-green">{answeredCount} (Auto-saved)</strong>
+                <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--r-md)', padding: '14px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--brand-green-bright)' }}>{answeredCount}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 3 }}>Answered</div>
                 </div>
-                <div className="summary-item">
-                  <span>Unanswered Questions:</span>
-                  <strong className={totalCount - answeredCount > 0 ? 'text-amber' : ''}>
-                    {totalCount - answeredCount}
-                  </strong>
+                <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 'var(--r-md)', padding: '14px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fcd34d' }}>{totalCount - answeredCount}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 3 }}>Skipped</div>
                 </div>
               </div>
-
-              {answeredCount > 0 && (
-                <div className="auto-save-notice">
-                  ⚡ <strong>Auto-Save Active:</strong> All your latest selected choices will be finalized and evaluated on the backend server.
+              {totalCount - answeredCount > 0 && (
+                <div className="alert alert-warning">
+                  ⚠ You have {totalCount - answeredCount} unanswered question{totalCount - answeredCount > 1 ? 's' : ''}. Submission is permanent.
                 </div>
               )}
-
-              {totalCount - answeredCount > 0 && (
-                <p className="warning-callout">
-                  ⚠️ You still have <strong>{totalCount - answeredCount} unanswered</strong> questions. Once submitted, the exam will be permanently closed.
-                </p>
-              )}
             </div>
-
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-outline"
-                disabled={isSubmittingFinal}
-                onClick={() => setShowSubmitModal(false)}
-              >
+            <div className="modal-footer" style={{ gap: 10 }}>
+              <button type="button" className="btn btn-outline" disabled={submitting} onClick={() => setShowConfirm(false)}>
                 Continue Exam
               </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                disabled={isSubmittingFinal}
-                onClick={handleFinalSubmit}
-              >
-                {isSubmittingFinal ? (
-                  <span className="btn-loading">
-                    <span className="spinner"></span> Finalizing & Evaluating...
-                  </span>
-                ) : (
-                  'Yes, Submit Exam'
-                )}
+              <button type="button" className="btn btn-danger" disabled={submitting} onClick={handleSubmit}>
+                {submitting ? <><span className="spinner" />Submitting…</> : 'Yes, Submit'}
               </button>
             </div>
           </div>
@@ -647,15 +401,14 @@ export default function ExamArena({
 }
 
 ExamArena.propTypes = {
-  sessionId: PropTypes.string.isRequired,
-  questionsList: PropTypes.array.isRequired,
-  videoRef: PropTypes.shape({ current: PropTypes.any }),
-  mediaStream: PropTypes.any,
-  timer: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  snapshotCount: PropTypes.number.isRequired,
-  screenSnapshotCount: PropTypes.number,
+  sessionId:              PropTypes.string.isRequired,
+  questionsList:          PropTypes.array.isRequired,
+  videoRef:               PropTypes.shape({ current: PropTypes.any }),
+  mediaStream:            PropTypes.any,
+  timer:                  PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  snapshotCount:          PropTypes.number.isRequired,
+  screenSnapshotCount:    PropTypes.number,
   onCaptureManualSnapshot: PropTypes.func,
-  onExamSubmitted: PropTypes.func.isRequired,
-  onOpenRules: PropTypes.func.isRequired,
+  onExamSubmitted:        PropTypes.func.isRequired,
+  onOpenRules:            PropTypes.func.isRequired,
 };
-
