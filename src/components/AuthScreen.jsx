@@ -1,13 +1,98 @@
 // src/components/AuthScreen.jsx — VEYRA Login & Sign Up Screen
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { loginUser, registerUser, saveToken } from '../services/api';
+
+// ── SVG Icon Components (Clean React JSX) ───────────────────────────────────
+function LockIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M23 7l-7 5 7 5V7z" />
+      <rect x="1" y="5" width="15" height="14" rx="2" />
+    </svg>
+  );
+}
+
+function TimerIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
+function LoginIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <polyline points="10 17 15 12 10 7" />
+      <line x1="15" y1="12" x2="3" y2="12" />
+    </svg>
+  );
+}
+
+function UserPlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+      <line x1="19" y1="8" x2="19" y2="14" />
+      <line x1="22" y1="11" x2="16" y2="11" />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
 
 /**
  * AuthScreen
- * Handles both Login and Sign Up flows, calling the provided callbacks on success.
- * Props:
- *   onAuthSuccess({ userId, name, email, token }) — called after successful auth
- *   backendOnline — bool, disables the form if backend is unreachable
+ * Clean Login & Sign Up flow with proper validation, password strength meter,
+ * and seamless JWT persistence.
  */
 export default function AuthScreen({ onAuthSuccess, backendOnline }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
@@ -27,10 +112,15 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
     setTab(t);
     setError(null);
     setSuccess(null);
-    setName(''); setEmail(''); setPassword(''); setConfirm('');
+    setName('');
+    setEmail('');
+    setPassword('');
+    setConfirm('');
+    setShowPass(false);
+    setShowConf(false);
   }
 
-  // ── Password strength ──────────────────────────────────────────────────────
+  // ── Password strength evaluation ───────────────────────────────────────────
   function getStrength(pw) {
     if (!pw) return 0;
     let score = 0;
@@ -52,7 +142,8 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
     if (!email.trim() || !password) {
       return setError('Email and password are required.');
     }
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await loginUser(email.trim(), password);
@@ -60,7 +151,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
       setSuccess('Login successful! Entering platform...');
       setTimeout(() => {
         onAuthSuccess({ userId: res.user.userId, name: res.user.name, email: res.user.email, token: res.token });
-      }, 600);
+      }, 500);
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -87,7 +178,8 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
       return setError('Passwords do not match.');
     }
 
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await registerUser(name.trim(), email.trim(), password);
@@ -95,7 +187,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
       setSuccess('Account created! Welcome to VEYRA...');
       setTimeout(() => {
         onAuthSuccess({ userId: res.user.userId, name: res.user.name, email: res.user.email, token: res.token });
-      }, 700);
+      }, 600);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -105,16 +197,24 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
 
   const isOffline = !backendOnline;
 
+  const features = [
+    { icon: <LockIcon />, label: 'Full Lockdown Proctoring' },
+    { icon: <CameraIcon />, label: 'Webcam & Screen Monitoring' },
+    { icon: <TimerIcon />, label: '30-Minute Timed Assessments' },
+    { icon: <ShieldIcon />, label: 'Tamper-Proof Session Records' },
+    { icon: <ChartIcon />, label: 'Instant Results & Analytics' },
+  ];
+
   return (
     <div className="auth-shell">
-      {/* Left decorative panel */}
+      {/* Left decorative brand panel */}
       <div className="auth-left-panel">
         <div className="auth-brand-block">
           <div className="auth-brand-logo">
             <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
               <rect width="48" height="48" rx="12" fill="var(--brand-blue)" />
-              <path d="M14 34L24 14L34 34" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M17.5 27H30.5" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M14 34L24 14L34 34" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M17.5 27H30.5" stroke="white" strokeWidth="3" strokeLinecap="round" />
             </svg>
           </div>
           <div className="auth-brand-name">VEYRA</div>
@@ -122,16 +222,10 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
         </div>
 
         <div className="auth-feature-list">
-          {[
-            { icon: lockIcon, label: 'Full Lockdown Proctoring' },
-            { icon: cameraIcon, label: 'Webcam &amp; Screen Monitoring' },
-            { icon: timerIcon, label: '30-Minute Timed Assessments' },
-            { icon: shieldIcon, label: 'Tamper-Proof Session Records' },
-            { icon: chartIcon, label: 'Instant Results &amp; Analytics' },
-          ].map(({ icon, label }) => (
+          {features.map(({ icon, label }) => (
             <div className="auth-feature-item" key={label}>
-              <span className="auth-feature-icon" dangerouslySetInnerHTML={{ __html: icon }} />
-              <span dangerouslySetInnerHTML={{ __html: label }} />
+              <span className="auth-feature-icon">{icon}</span>
+              <span>{label}</span>
             </div>
           ))}
         </div>
@@ -144,7 +238,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
       {/* Right form panel */}
       <div className="auth-right-panel">
         <div className="auth-card">
-          {/* Backend offline banner */}
+          {/* Backend offline warning banner */}
           {isOffline && (
             <div className="auth-offline-banner">
               <span className="auth-offline-dot" />
@@ -210,12 +304,12 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                     onClick={() => setShowPass(v => !v)}
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                   >
-                    {showPass ? eyeOffIcon : eyeIcon}
+                    {showPass ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
               </div>
 
-              {error   && <div className="auth-error-msg">{error}</div>}
+              {error && <div className="auth-error-msg">{error}</div>}
               {success && <div className="auth-success-msg">{success}</div>}
 
               <button
@@ -228,7 +322,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                   <span className="auth-spinner" />
                 ) : (
                   <>
-                    <span dangerouslySetInnerHTML={{ __html: loginIcon }} />
+                    <LoginIcon />
                     Sign In
                   </>
                 )}
@@ -297,14 +391,14 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                     onClick={() => setShowPass(v => !v)}
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                   >
-                    {showPass ? eyeOffIcon : eyeIcon}
+                    {showPass ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
                 {/* Password strength bar */}
                 {password && (
                   <div className="auth-strength-bar-wrap">
                     <div className="auth-strength-bar">
-                      {[1,2,3,4,5].map(i => (
+                      {[1, 2, 3, 4, 5].map(i => (
                         <div
                           key={i}
                           className="auth-strength-segment"
@@ -339,7 +433,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                     onClick={() => setShowConf(v => !v)}
                     aria-label={showConf ? 'Hide password' : 'Show password'}
                   >
-                    {showConf ? eyeOffIcon : eyeIcon}
+                    {showConf ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
                 {confirm && confirm !== password && (
@@ -347,7 +441,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                 )}
               </div>
 
-              {error   && <div className="auth-error-msg">{error}</div>}
+              {error && <div className="auth-error-msg">{error}</div>}
               {success && <div className="auth-success-msg">{success}</div>}
 
               <button
@@ -360,7 +454,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                   <span className="auth-spinner" />
                 ) : (
                   <>
-                    <span dangerouslySetInnerHTML={{ __html: userPlusIcon }} />
+                    <UserPlusIcon />
                     Create Account
                   </>
                 )}
@@ -380,13 +474,7 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
   );
 }
 
-// ── Inline SVG strings ─────────────────────────────────────────────────────────
-const lockIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
-const cameraIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
-const timerIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-const shieldIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
-const chartIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
-const loginIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
-const userPlusIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`;
-const eyeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
-const eyeOffIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+AuthScreen.propTypes = {
+  onAuthSuccess: PropTypes.func.isRequired,
+  backendOnline: PropTypes.bool.isRequired,
+};

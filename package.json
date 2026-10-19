@@ -10,6 +10,7 @@
     "dev": "vite",
     "dev:backend": "node backend/server.js",
     "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev\"",
+    "all": "npm run dev:all",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
