@@ -182,6 +182,73 @@ async function runTests() {
     }
   });
 
+  // 9. Auth: Register a new candidate
+  let authTestToken = null;
+  const testCandidateEmail = `test.candidate.${Date.now()}@veyra.io`;
+
+  await test('POST /auth/register creates candidate account and returns JWT', async () => {
+    const res = await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Test Candidate',
+        email: testCandidateEmail,
+        password: 'Password123!',
+      }),
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}: ${JSON.stringify(res.data)}`);
+    if (!res.data.token || !res.data.user?.userId) {
+      throw new Error(`Invalid registration response: ${JSON.stringify(res.data)}`);
+    }
+    if (res.data.user.passwordHash || res.data.user.password) {
+      throw new Error('Security flaw: password or hash leaked in registration response');
+    }
+    authTestToken = res.data.token;
+  });
+
+  // 10. Auth: Login with valid credentials
+  await test('POST /auth/login authenticates candidate and returns JWT', async () => {
+    const res = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: testCandidateEmail,
+        password: 'Password123!',
+      }),
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}: ${JSON.stringify(res.data)}`);
+    if (!res.data.token || res.data.user.email !== testCandidateEmail) {
+      throw new Error(`Login response missing expected fields: ${JSON.stringify(res.data)}`);
+    }
+    authTestToken = res.data.token;
+  });
+
+  // 11. Auth: Reject invalid credentials
+  await test('POST /auth/login rejects incorrect password with 401', async () => {
+    const res = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: testCandidateEmail,
+        password: 'WrongPassword!',
+      }),
+    });
+    if (res.status !== 401) throw new Error(`Expected 401, got ${res.status}`);
+  });
+
+  // 12. Auth: GET /auth/me with Bearer token
+  await test('GET /auth/me returns authenticated candidate profile', async () => {
+    const res = await request('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${authTestToken}`,
+      },
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}: ${JSON.stringify(res.data)}`);
+    if (res.data.email !== testCandidateEmail) {
+      throw new Error(`Profile email mismatch: expected ${testCandidateEmail}, got ${res.data.email}`);
+    }
+    if (res.data.password || res.data.passwordHash) {
+      throw new Error('Security flaw: password leaked in /auth/me');
+    }
+  });
+
   console.log('\n\x1b[1m' + (failed === 0 ? '\x1b[32mALL TESTS PASSED!' : `\x1b[31m${failed} TESTS FAILED`) + '\x1b[0m');
   console.log(`Passed: ${passed} | Failed: ${failed}\n`);
 

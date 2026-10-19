@@ -5,42 +5,52 @@
 
 ---
 
-## 🌟 Candidate Journey & Core Capabilities
+## Candidate Journey & System Architecture
 
-```
+```text
 ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
-│ 1. Available Exams     │ ───► │ 2. Pre-Exam Setup      │ ───► │ 3. Locked Exam Arena   │
-│ • Catalog & Guidelines │      │ • Webcam Test & Agree  │      │ • Kiosk Lockdown       │
-│ • Candidate Identity   │      │ • Hardware Check       │      │ • Auto-save & Proctor  │
+│ 0. Authentication      │ ───► │ 1. Available Exams     │ ───► │ 2. Pre-Exam Setup      │
+│ • Secure Sign Up/Login │      │ • Assessment Catalog   │      │ • Webcam Test & Agree  │
+│ • JWT Session Token    │      │ • Candidate Identity   │      │ • Hardware Check       │
 └────────────────────────┘      └────────────────────────┘      └───────────┬────────────┘
                                                                             │
                                                                             ▼
 ┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
-│ 6. Attempt History     │ ◄─── │ 5. Answer Key Review   │ ◄─── │ 4. Final Submission    │
-│ • Persistent Records   │      │ • Verified Solutions   │      │ • Telemetry Summary    │
-│ • Timestamped Audits   │      │ • Step-by-Step Reason  │      │ • Pass / Fail Verdict  │
+│ 5. Attempt History     │ ◄─── │ 4. Answer Key Review   │ ◄─── │ 3. Locked Exam Arena   │
+│ • Persistent Records   │      │ • Verified Solutions   │      │ • 30-Minute Timer      │
+│ • Timestamped Audits   │      │ • Step-by-Step Reason  │      │ • Auto-save & Proctor  │
 └────────────────────────┘      └────────────────────────┘      └────────────────────────┘
 ```
 
+### 0. Candidate Authentication & Identity Management
+- **Registration**: Candidate account creation with full name, email validation, and password strength evaluation.
+- **Login**: Credential verification against local encrypted store with salted PBKDF2 / SHA-256 password hashes.
+- **JWT Authentication**: Stateless Bearer tokens issued upon successful login, saved locally to re-hydrate sessions on restart (`GET /auth/me`).
+- **Profile Header & Sign Out**: Clean sign out action available throughout the platform (disabled during locked exams).
+- **Default Demo Credentials**:
+  - Email: `candidate@veyra.io`
+  - Password: `Password123!`
+
 ### 1. Available Assessments Portal
-- Browse scheduled and open assessments with subject tags, question counts, time limits, and passing benchmarks.
+- Browse scheduled and open assessments with subject tags, question counts, 30-minute time limits, and passing benchmarks.
 - Live backend API connectivity badge (`Online` / `Offline`) dynamically discovered via Electron IPC.
 - Instant access to candidate examination history.
 
 ### 2. Pre-Examination Hardware Verification
-- Candidate ID & Full Name validation (persisted in local storage).
+- Candidate ID & Full Name validation tied directly to authenticated account.
 - Live camera stream initialization and hardware readiness check.
 - Mandatory fullscreen security agreement and exam policy guidelines modal.
 
 ### 3. Timed Examination Arena
+- **30-Minute Countdown Timer**: Standard professional 30:00 countdown timer with live progress tracking, warning alerts, and automated submission on expiry.
 - **Randomized Option Shuffling**: Options (A, B, C, D) are randomly permuted per question and candidate session to prevent collusion and screen-peeking, while transparently preserving 100% accurate server-authoritative evaluation.
-- **🔖 Mark for Review**: Candidates can bookmark questions to revisit later. Highlighted with a distinct badge and star (`★`) in the question palette and summarized in the submission modal.
-- **Non-Linear Question Palette**: Real-time status indicators for Answered (Green), Unanswered (Gray), and Marked for Review (Purple).
+- **Mark for Review**: Candidates can bookmark questions to revisit later. Highlighted with a distinct badge and indicator in the question palette and summarized in the submission modal.
+- **Non-Linear Question Palette**: Real-time status indicators for Answered (Green), Unanswered (Slate), and Marked for Review (Purple).
 - **Auto-Save Resilience**: Answer selections are immediately auto-saved and synchronized to the local backend.
 - **Automated Proctoring**:
   - **Camera Snapshots**: Captured automatically every 5 seconds.
   - **Screen Captures**: Captured automatically every 10 seconds.
-  - **Secure Storage**: Stored privately in `proctoring_data/camera_snaps` and `proctoring_data/screen_snaps` in the project root. Snapshots are hidden from the candidate UI to prevent tampering.
+  - **Secure Storage**: Stored privately in `proctoring_data/camera_snaps` and `proctoring_data/screen_snaps` in the project root. Snapshots are hidden from candidate access to prevent tampering.
 
 ### 4. Anti-Cheat Security & Lock-Down Engine
 - **Kiosk Mode (`setKiosk(true)`)**: Disables macOS 3-finger swipe desktop switching, Mission Control, system Dock, and Menu Bar during the examination.
@@ -58,12 +68,12 @@
 - **Answer Key Review**:
   - Displays each question with verified correct answers.
   - Shows candidate's selected choice compared side-by-side with the correct option.
-  - 💡 **Explanation & Key Concept**: Comprehensive reasoning provided for every question.
+  - Detailed explanation & key concept: Comprehensive reasoning provided for every question.
   - Filter by All, Correct, Incorrect, or Skipped with instant jump-to-question chips.
 
 ---
 
-## 🎨 Visual Identity: White, Blue, Green & Yellow Light Theme
+## Visual Identity: White, Blue, Green & Yellow Light Theme
 
 Designed with a clean, modern, high-contrast palette:
 - **Base Surfaces & Cards**: Crisp Pure White (`#ffffff`), Soft Slate (`#f8fafc`), Clean Borders (`#e2e8f0`).
@@ -75,20 +85,21 @@ Designed with a clean, modern, high-contrast palette:
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Technology Stack
 
 | Component | Technology | Description |
 |---|---|---|
 | **Desktop Shell** | Electron 35 | Native window management, Kiosk lockdown, IPC bridge, anti-cheat |
 | **Frontend UI** | React 19 + Vite | Fast component architecture, vanilla CSS design tokens |
-| **Backend API** | Node.js + Express | RESTful session management, evaluation, and flag logging |
-| **Data Storage** | Local JSON Store | `backend/data/questions.json` and `backend/data/sessions.json` |
-| **Proctoring Data** | File System Storage | `proctoring_data/camera_snaps/` and `proctoring_data/screen_snaps/` |
-| **Quality & Tests** | Node Test Suite + ESLint | 8 end-to-end integration tests (`npm test`) and strict linting |
+| **Backend API** | Node.js + Express | RESTful session management, evaluation, authentication, and flag logging |
+| **Authentication** | JWT + PBKDF2/SHA-256 | Candidate register/login, token-based verification |
+| **Data Storage** | Local JSON Store | `backend/data/users.json`, `questions.json`, `sessions.json` |
+| **Proctoring Data** | File System Storage | `proctoring_data/camera_snaps/` and `screen_snaps/` |
+| **Quality & Tests** | Node Test Suite + ESLint | 12 end-to-end integration tests (`npm test`) and strict linting |
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 Athena-Clone/
@@ -97,16 +108,18 @@ Athena-Clone/
 │   └── preload.cjs            # Secure CommonJS ContextBridge (`window.veyra` & `window.athena`)
 ├── backend/
 │   ├── data/
+│   │   ├── users.json         # Registered candidate store (passwords safely hashed)
 │   │   ├── questions.json     # MCQ Question bank with server-side solutions
 │   │   └── sessions.json      # Exam session records and proctoring audit logs
 │   ├── tests/
-│   │   └── run-tests.js       # Integration test runner (8 end-to-end tests)
-│   └── server.js              # Express REST API (Questions, Sessions, Flags, Review)
+│   │   └── run-tests.js       # Integration test runner (12 end-to-end tests)
+│   └── server.js              # Express REST API (Auth, Questions, Sessions, Flags, Review)
 ├── proctoring_data/           # Dedicated directory for proctoring evidence
 │   ├── camera_snaps/          # Automated webcam snapshots (*-cam.jpg)
 │   └── screen_snaps/          # Automated screen captures (*-screen.jpg)
 ├── src/
 │   ├── components/
+│   │   ├── AuthScreen.jsx     # Login and Registration interface with password strength meter
 │   │   ├── AvailableExams.jsx # Portal for available assessments
 │   │   ├── PreExamSetup.jsx   # Candidate verification & webcam check
 │   │   ├── ExamArena.jsx      # Active exam interface (option shuffling, mark for review, flags)
@@ -115,7 +128,7 @@ Athena-Clone/
 │   │   ├── Header.jsx         # Top navigation and status bar
 │   │   └── RulesModal.jsx     # Examination rules modal
 │   ├── services/
-│   │   └── api.js             # Dynamic port API client with Electron IPC proxy
+│   │   └── api.js             # Dynamic port API client with Electron IPC proxy & auth helpers
 │   ├── App.css                # Component styling (Light Theme: White/Blue/Green/Yellow)
 │   ├── App.jsx                # App shell and stage state machine
 │   ├── index.css              # Global design tokens and CSS variables
@@ -126,7 +139,7 @@ Athena-Clone/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Run as Electron Desktop App + Backend (Recommended)
 This compiles the production frontend bundle, starts the backend, and opens the Electron desktop app:
@@ -142,6 +155,7 @@ npm run dev:all
 Open **`http://localhost:5173`** in your browser.
 
 ### 3. Run Integration Tests
+Runs the full 12-test suite covering authentication, question masking, sessions, answers, and proctoring:
 ```bash
 npm test
 ```
@@ -158,7 +172,7 @@ npm run build
 
 ---
 
-## 🔒 Proctoring Data & Snapshots Inspection
+## Proctoring Data & Snapshots Inspection
 Automated snapshots are saved directly in the project directory for proctor audit:
 - Camera photos: `proctoring_data/camera_snaps/`
 - Screen captures: `proctoring_data/screen_snaps/`

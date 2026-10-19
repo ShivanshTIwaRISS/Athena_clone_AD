@@ -10,6 +10,7 @@ import ExamArena from './components/ExamArena';
 import ExamResults from './components/ExamResults';
 import AttemptHistory from './components/AttemptHistory';
 import RulesModal from './components/RulesModal';
+import AuthScreen from './components/AuthScreen';
 
 // Services
 import {
@@ -18,23 +19,37 @@ import {
   startExam,
   getAllQuestions,
   getSessionDetails,
+  getToken,
+  clearToken,
+  getAuthMe,
 } from './services/api';
 
 export default function App() {
-  // Navigation / Workflow Stages: 'AVAILABLE_EXAMS' | 'SETUP' | 'EXAM' | 'RESULTS' | 'HISTORY'
-  const [stage, setStage] = useState('AVAILABLE_EXAMS');
+  // Navigation / Workflow Stages: 'AUTH' | 'AVAILABLE_EXAMS' | 'SETUP' | 'EXAM' | 'RESULTS' | 'HISTORY'
+  const [stage, setStage] = useState('AUTH');
 
-  // Candidate identity (persisted in localStorage for convenience)
-  const [userId, setUserId] = useState(() => localStorage.getItem('veyra_student_id') || 'student-101');
-  const [name, setName] = useState(() => localStorage.getItem('veyra_student_name') || 'Aditya Sharma');
+  // Candidate identity (set from auth response)
+  const [userId, setUserId] = useState('');
+  const [name, setName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
+  // ── Restore existing session from stored JWT on mount ──────────────────────
   useEffect(() => {
-    if (userId) localStorage.setItem('veyra_student_id', userId);
-  }, [userId]);
-
-  useEffect(() => {
-    if (name) localStorage.setItem('veyra_student_name', name);
-  }, [name]);
+    const token = getToken();
+    if (!token) return;
+    // Attempt to re-hydrate user identity from backend
+    getAuthMe()
+      .then((user) => {
+        setUserId(user.userId);
+        setName(user.name);
+        setUserEmail(user.email);
+        setStage('AVAILABLE_EXAMS');
+      })
+      .catch(() => {
+        // Token expired / invalid — clear and stay on AUTH
+        clearToken();
+      });
+  }, []);
 
   // Selected Examination metadata
   const [selectedExam, setSelectedExam] = useState(null);
@@ -403,6 +418,31 @@ export default function App() {
   };
 
   /**
+   * Auth Success — called by AuthScreen after login / signup
+   */
+  const handleAuthSuccess = ({ userId: uid, name: uname, email }) => {
+    setUserId(uid);
+    setName(uname);
+    setUserEmail(email);
+    setStage('AVAILABLE_EXAMS');
+  };
+
+  /**
+   * Logout — clear token and return to auth screen
+   */
+  const handleLogout = () => {
+    stopProctoringFlow();
+    clearToken();
+    setUserId('');
+    setName('');
+    setUserEmail('');
+    setSessionId('');
+    setResultData(null);
+    setFinalSessionData(null);
+    setStage('AUTH');
+  };
+
+  /**
    * Select an assessment and proceed to verification
    */
   const handleSelectExam = (exam) => {
@@ -412,24 +452,35 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {/* Top Header */}
-      <Header
-        stage={stage}
-        studentName={name}
-        userId={userId}
-        sessionId={sessionId}
-        timer={timer}
-        backendOnline={backendOnline}
-        onOpenRules={() => setRulesOpen(true)}
-        onNavigate={(newStage) => {
-          if (stage !== 'EXAM') {
-            setStage(newStage);
-          }
-        }}
-      />
+      {/* ── AUTH SCREEN (no header/footer) ── */}
+      {stage === 'AUTH' && (
+        <AuthScreen
+          onAuthSuccess={handleAuthSuccess}
+          backendOnline={backendOnline}
+        />
+      )}
+      {/* Top Header — only shown outside auth screen */}
+      {stage !== 'AUTH' && (
+        <Header
+          stage={stage}
+          studentName={name}
+          userId={userId}
+          userEmail={userEmail}
+          sessionId={sessionId}
+          timer={timer}
+          backendOnline={backendOnline}
+          onOpenRules={() => setRulesOpen(true)}
+          onLogout={handleLogout}
+          onNavigate={(newStage) => {
+            if (stage !== 'EXAM') {
+              setStage(newStage);
+            }
+          }}
+        />
+      )}
 
-      {/* Main Content Area */}
-      <main className="app-main-content">
+      {/* Main Content Area — only shown outside auth screen */}
+      {stage !== 'AUTH' && <main className="app-main-content">
         {/* Stage 1: Available Examinations */}
         {stage === 'AVAILABLE_EXAMS' && (
           <AvailableExams
@@ -539,10 +590,10 @@ export default function App() {
             }}
           />
         )}
-      </main>
+      </main>}
 
       {/* Rules & Guidelines Modal */}
-      <RulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />
+      {stage !== 'AUTH' && <RulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />}
     </div>
   );
 }

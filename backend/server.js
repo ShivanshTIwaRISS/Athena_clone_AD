@@ -2,9 +2,18 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// ── JWT Secret ────────────────────────────────────────────────────────────────
+// In production this should be an environment variable; for this desktop-local
+// app a fixed constant is acceptable since the backend is only reachable on
+// 127.0.0.1 anyway.
+const JWT_SECRET = "veyra_exam_secret_2024_xk9z";
+const JWT_EXPIRES_IN = "8h";
 
 app.use(cors());
 app.use((req, res, next) => {
@@ -19,8 +28,10 @@ app.use((req, res, next) => {
 });
 app.use(express.json());
 
+// ── File helpers ──────────────────────────────────────────────────────────────
 const questionsPath = path.join(__dirname, "data", "questions.json");
-const sessionsPath = path.join(__dirname, "data", "sessions.json");
+const sessionsPath  = path.join(__dirname, "data", "sessions.json");
+const usersPath     = path.join(__dirname, "data", "users.json");
 
 function readQuestions() {
   return JSON.parse(fs.readFileSync(questionsPath, "utf-8"));
@@ -34,8 +45,40 @@ function saveSessions(sessions) {
   fs.writeFileSync(sessionsPath, JSON.stringify(sessions, null, 2));
 }
 
+function readUsers() {
+  try {
+    const raw = fs.readFileSync(usersPath, "utf-8").trim();
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
+
 function makeSessionId() {
   return `session-${Date.now()}`;
+}
+
+function makeUserId() {
+  return `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+// ── JWT middleware ────────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authentication required." });
+  }
+  const token = authHeader.slice(7);
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
 }
 
 function questionForStudent(question) {
@@ -46,9 +89,147 @@ function questionForStudent(question) {
   };
 }
 
+// ── Health check ──────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
   res.json({ message: "Exam backend is running" });
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  AUTH ROUTES
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * POST /auth/register
+ * Body: { name, email, password }
+ * Creates a new candidate account.
+ */
+app.post("/auth/register", async (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Name, email and password are required." });
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedName  = name.trim();
+
+  if (trimmedName.length < 2) {
+    return res.status(400).json({ message: "Name must be at least 2 characters." });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return res.status(400).json({ message: "Please enter a valid email address." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters." });
+  }
+
+  const users = readUsers();
+  const existingUser = users.find((u) => u.email === trimmedEmail);
+  if (existingUser) {
+    return res.status(409).json({ message: "An account with this email already exists." });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const newUser = {
+    userId: makeUserId(),
+    name: trimmedName,
+    email: trimmedEmail,
+    passwordHash,
+    createdAt: new Date().toISOString(),
+    role: "candidate",
+  };
+
+  users.push(newUser);
+  saveUsers(users);
+
+  const token = jwt.sign(
+    { userId: newUser.userId, name: newUser.name, email: newUser.email, role: newUser.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+
+  res.status(201).json({
+    message: "Account created successfully.",
+    token,
+    user: {
+      userId: newUser.userId,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      createdAt: newUser.createdAt,
+    },
+  });
+});
+
+/**
+ * POST /auth/login
+ * Body: { email, password }
+ * Returns a JWT token on success.
+ */
+app.post("/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const users = readUsers();
+  const user = users.find((u) => u.email === trimmedEmail);
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid email or password." });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!passwordMatch) {
+    return res.status(401).json({ message: "Invalid email or password." });
+  }
+
+  const token = jwt.sign(
+    { userId: user.userId, name: user.name, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+
+  res.json({
+    message: "Login successful.",
+    token,
+    user: {
+      userId: user.userId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+    },
+  });
+});
+
+/**
+ * GET /auth/me
+ * Returns the authenticated user's profile from the JWT.
+ */
+app.get("/auth/me", requireAuth, (req, res) => {
+  const users = readUsers();
+  const user = users.find((u) => u.userId === req.user.userId);
+  if (!user) {
+    return res.status(404).json({ message: "User not found." });
+  }
+  res.json({
+    userId: user.userId,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt,
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  EXAM ROUTES (unchanged, but now auth is available if needed)
+// ═════════════════════════════════════════════════════════════════════════════
 
 // Start a new exam session
 app.post("/exam/start", (req, res) => {
@@ -146,7 +327,6 @@ app.post("/exam/answer", (req, res) => {
   const isCorrect = Number(selectedAnswer) === question.correctAnswer;
 
   if (existingAnswerIndex !== -1) {
-    // If updating previous answer, adjust correct/wrong counts
     const prevAnswer = session.answers[existingAnswerIndex];
     if (prevAnswer.isCorrect) {
       session.correct = Math.max(0, session.correct - 1);
@@ -187,7 +367,7 @@ app.post("/exam/answer", (req, res) => {
   });
 });
 
-// Record a proctoring flag / violation (window blur, tab switch, shortcut abuse)
+// Record a proctoring flag / violation
 app.post("/exam/flag", (req, res) => {
   const { sessionId, type, reason, details } = req.body;
 
@@ -248,7 +428,7 @@ function buildSessionReview(session) {
   });
 }
 
-// Get current session progress (includes review if submitted)
+// Get current session progress
 app.get("/exam/session/:sessionId", (req, res) => {
   const sessions = readSessions();
 
@@ -270,7 +450,7 @@ app.get("/exam/session/:sessionId", (req, res) => {
   res.json(session);
 });
 
-// Submit the whole exam (returns result and full answer key with explanations)
+// Submit the whole exam
 app.post("/exam/submit", (req, res) => {
   const { sessionId } = req.body;
 
@@ -306,7 +486,7 @@ app.post("/exam/submit", (req, res) => {
   });
 });
 
-// Dedicated answer key & solution review endpoint
+// Answer key & solution review
 app.get("/exam/session/:sessionId/review", (req, res) => {
   const sessions = readSessions();
   const session = sessions.find(
@@ -320,7 +500,7 @@ app.get("/exam/session/:sessionId/review", (req, res) => {
   res.json(buildSessionReview(session));
 });
 
-// Get candidate session history
+// Candidate session history
 app.get("/exam/sessions", (req, res) => {
   const sessions = readSessions();
   const { userId } = req.query;
@@ -330,6 +510,7 @@ app.get("/exam/sessions", (req, res) => {
   res.json(sessions);
 });
 
+// ── Start server ──────────────────────────────────────────────────────────────
 const HOST = "127.0.0.1";
 const server = app.listen(PORT, HOST, () => {
   console.log(`Exam backend running at http://${HOST}:${PORT}`);
@@ -339,3 +520,5 @@ server.on("error", (err) => {
   console.error(`[VEYRA Backend Error] ${err.message}`);
   process.exit(1);
 });
+
+module.exports = { app };

@@ -197,3 +197,57 @@ export async function logProctorFlag(sessionId, type, reason, details) {
     }),
   });
 }
+
+// ── Auth token helpers ────────────────────────────────────────────────────────
+const TOKEN_KEY = 'veyra_auth_token';
+
+export function saveToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+/** Returns the Authorization header object if a token is stored */
+function authHeader() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ── Auth API calls ────────────────────────────────────────────────────────────
+
+/**
+ * 11. POST /auth/register
+ * Body: { name, email, password }
+ */
+export async function registerUser(name, email, password) {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  });
+}
+
+/**
+ * 12. POST /auth/login
+ * Body: { email, password }
+ */
+export async function loginUser(email, password) {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+/**
+ * 13. GET /auth/me – Fetch authenticated user profile
+ */
+export async function getAuthMe() {
+  return request('/auth/me', {
+    headers: authHeader(),
+  });
+}

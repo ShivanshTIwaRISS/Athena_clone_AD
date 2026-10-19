@@ -22,11 +22,13 @@ export default function Header({
   stage,
   studentName,
   userId,
+  userEmail,
   sessionId,
   timer,
   backendOnline,
   onOpenRules,
   onNavigate,
+  onLogout,
 }) {
   const isExam = stage === 'EXAM';
 
@@ -123,8 +125,8 @@ export default function Header({
             </div>
             <div className="candidate-meta">
               <span className="candidate-name">{studentName}</span>
-              <span className="candidate-id">
-                {userId || (sessionId ? sessionId.slice(0, 14) : '—')}
+              <span className="candidate-id" title={userEmail || userId}>
+                {userEmail || userId || (sessionId ? sessionId.slice(0, 14) : '—')}
               </span>
             </div>
           </div>
@@ -145,6 +147,23 @@ export default function Header({
           </svg>
           Rules
         </button>
+
+        {/* Logout — hidden during active exam */}
+        {!isExam && onLogout && (
+          <button
+            type="button"
+            className="btn-header-logout"
+            onClick={onLogout}
+            title="Sign out of VEYRA"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign Out
+          </button>
+        )}
       </div>
     </header>
   );
@@ -154,9 +173,11 @@ Header.propTypes = {
   stage:        PropTypes.string.isRequired,
   studentName:  PropTypes.string,
   userId:       PropTypes.string,
+  userEmail:    PropTypes.string,
   sessionId:    PropTypes.string,
   timer:        PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   backendOnline: PropTypes.bool.isRequired,
   onOpenRules:  PropTypes.func.isRequired,
   onNavigate:   PropTypes.func,
+  onLogout:     PropTypes.func,
 };
