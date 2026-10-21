@@ -162,7 +162,16 @@ export default function App() {
   /**
    * Request Fullscreen mode
    */
-  const enableFullScreen = () => {
+  const enableFullScreen = async () => {
+    if (window.veyra?.enableFullScreen) {
+      try {
+        await window.veyra.enableFullScreen();
+        setFullScreen(true);
+        return;
+      } catch (err) {
+        console.warn('IPC enableFullScreen error:', err);
+      }
+    }
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
       elem.requestFullscreen().catch(() => {});

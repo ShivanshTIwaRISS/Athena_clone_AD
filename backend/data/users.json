@@ -22,5 +22,21 @@
     "passwordHash": "$2b$12$xeVaVBbrBf9TuMYUNgbsX.M421aRZ3ZXugcG5k14qc4JvoRocGp7q",
     "createdAt": "2026-10-21T09:02:38.001Z",
     "role": "candidate"
+  },
+  {
+    "userId": "user-1792574259234-xhmqt",
+    "name": "Test Candidate",
+    "email": "test.candidate.1792574259007@veyra.io",
+    "passwordHash": "$2b$12$PAlagf0YLECrOi5RAYMD/O1EUNLSV.BFZAXOdnmbyDCzYqOGHjuJG",
+    "createdAt": "2026-10-21T09:17:39.234Z",
+    "role": "candidate"
+  },
+  {
+    "userId": "user-1792574294259-e7ywr",
+    "name": "Test Candidate",
+    "email": "test.candidate.1792574294029@veyra.io",
+    "passwordHash": "$2b$12$8c6jzQVHrgpsCNcSMisuWOs8C9PBqG4RZuHTfhh/ggJI17IAnKose",
+    "createdAt": "2026-10-21T09:18:14.259Z",
+    "role": "candidate"
   }
 ]

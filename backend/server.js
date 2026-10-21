@@ -34,11 +34,21 @@ const sessionsPath  = path.join(__dirname, "data", "sessions.json");
 const usersPath     = path.join(__dirname, "data", "users.json");
 
 function readQuestions() {
-  return JSON.parse(fs.readFileSync(questionsPath, "utf-8"));
+  try {
+    const raw = fs.readFileSync(questionsPath, "utf-8").trim();
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 function readSessions() {
-  return JSON.parse(fs.readFileSync(sessionsPath, "utf-8"));
+  try {
+    const raw = fs.readFileSync(sessionsPath, "utf-8").trim();
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
 }
 
 function saveSessions(sessions) {

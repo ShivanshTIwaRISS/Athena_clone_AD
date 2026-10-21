@@ -1290,5 +1290,26 @@
         "answeredAt": "2026-10-21T09:02:37.764Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792574294016",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-21T09:18:14.016Z",
+    "submittedAt": "2026-10-21T09:18:14.024Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T09:18:14.019Z"
+      }
+    ]
   }
 ]

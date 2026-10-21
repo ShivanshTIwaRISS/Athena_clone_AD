@@ -137,6 +137,7 @@ function createWindow(port = 3000) {
     title: "VEYRA – Smart Assessments. Seamless Execution.",
     backgroundColor: "#f8fafc",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    fullscreenable: false,
     webPreferences: {
       devTools: !app.isPackaged,
       preload: path.join(import.meta.dirname, "preload.cjs"),
@@ -247,26 +248,76 @@ async function getRunningProhibitedApps() {
 async function closeProhibitedApps() {
   if (process.platform === "darwin") {
     try {
-      const script = `
-tell application "System Events"
-  set runningApps to name of every process where background only is false
-end tell
-repeat with appName in runningApps
-  set aName to appName as text
-  if aName is not "Finder" and aName is not "Electron" and aName is not "VEYRA" and aName is not "loginwindow" then
-    try
-      tell application aName to quit
-    end try
-  end if
-end repeat
-`;
-      await execAsync(`osascript -e '${script.replace(/'/g, "'\\''")}'`);
+      const running = await getRunningProhibitedApps();
+      for (const appName of running) {
+        try {
+          await execAsync(`osascript -e 'tell application "${appName.replace(/"/g, '\\"')}" to quit'`);
+        } catch {
+          // ignore
+        }
+      }
+      // Give apps 400ms to exit gracefully, then force-kill any still lingering
+      await new Promise((r) => setTimeout(r, 400));
+      const stillRunning = await getRunningProhibitedApps();
+      for (const appName of stillRunning) {
+        try {
+          await execAsync(`pkill -x -9 "${appName}"`);
+        } catch {
+          // ignore
+        }
+      }
       return true;
     } catch {
       return false;
     }
   }
   return false;
+}
+
+// ─── Trackpad Gestures Enforcement (macOS) ───────────────────────────────────
+async function disableMacTrackpadGestures() {
+  if (process.platform !== "darwin") return;
+  try {
+    // Disable 3-finger / 4-finger horizontal swipe (switching full-screen apps / spaces)
+    // and vertical swipe (Mission Control / App Exposé)
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 0`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 0`);
+    try {
+      await execAsync(`/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null`);
+    } catch {
+      // ignore
+    }
+  } catch (err) {
+    console.warn("[VEYRA] Could not disable trackpad gestures:", err.message);
+  }
+}
+
+async function restoreMacTrackpadGestures() {
+  if (process.platform !== "darwin") return;
+  try {
+    // Restore default macOS gesture mappings (2 = swipe between pages / spaces / mission control)
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerVertSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerVertSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerVertSwipeGesture -int 2`);
+    await execAsync(`defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerVertSwipeGesture -int 2`);
+    try {
+      await execAsync(`/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u 2>/dev/null`);
+    } catch {
+      // ignore
+    }
+  } catch (err) {
+    console.warn("[VEYRA] Could not restore trackpad gestures:", err.message);
+  }
 }
 
 // ─── Screen Capture (Full Physical Desktop Screen) ───────────────────────────
@@ -321,13 +372,12 @@ function checkAndEnforceDisplayIntegrity() {
   const display = screen.getPrimaryDisplay();
   const bounds = electronWindow.getBounds();
   const isKiosk = electronWindow.isKiosk();
-  const isFullScreen = electronWindow.isFullScreen();
 
   // Detect if window is resized, tiled, or put into split screen
   const isTiledOrSplit =
-    bounds.width < display.bounds.width * 0.96 ||
-    bounds.height < display.bounds.height * 0.92 ||
-    (!isKiosk && !isFullScreen);
+    bounds.width < display.bounds.width * 0.98 ||
+    bounds.height < display.bounds.height * 0.98 ||
+    !isKiosk;
 
   if (isTiledOrSplit) {
     console.warn(
@@ -337,23 +387,57 @@ function checkAndEnforceDisplayIntegrity() {
     // Instantly notify renderer to log a violation flag and show warning modal
     electronWindow.webContents.send("proctor-violation", {
       type: "SPLIT_SCREEN_DETECTED",
-      message: "Split screen, tiling, or window resizing detected. The examination window must occupy the entire display.",
+      message: "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
       details: {
         windowBounds: `${bounds.width}x${bounds.height}`,
         displayBounds: `${display.bounds.width}x${display.bounds.height}`,
       },
     });
 
-    // Re-enforce full screen and kiosk immediately
+    // Re-enforce kiosk bounds without native Spaces
     try {
+      electronWindow.setFullScreenable(false);
       electronWindow.setBounds(display.bounds);
-      electronWindow.setFullScreen(true);
       electronWindow.setKiosk(true);
-      electronWindow.setAlwaysOnTop(true, "screen-saver");
+      electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
+      electronWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
       electronWindow.focus();
     } catch (err) {
       console.warn("[VEYRA] Re-enforcing kiosk bounds:", err.message);
     }
+  }
+
+  // Multi-display check
+  const displays = screen.getAllDisplays();
+  if (displays.length > 1) {
+    electronWindow.webContents.send("proctor-violation", {
+      type: "MULTIPLE_DISPLAYS_DETECTED",
+      message: `Multiple displays detected (${displays.length}). External monitors are prohibited during the examination.`,
+      details: { displayCount: displays.length },
+    });
+  }
+}
+
+function handleWindowBlur() {
+  if (!isExamLockdown || !electronWindow || electronWindow.isDestroyed()) return;
+  console.warn("[VEYRA PROCTOR] Window blur detected during exam lockdown.");
+  electronWindow.webContents.send("proctor-violation", {
+    type: "WINDOW_BLUR",
+    message: "Exam window lost focus. Switching applications, spaces, or clicking outside is recorded as a violation.",
+  });
+  // Aggressively force focus back to the exam immediately
+  try {
+    electronWindow.show();
+    electronWindow.focus();
+    electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
+  } catch {
+    // ignore
+  }
+}
+
+function preventSwipe(event) {
+  if (isExamLockdown) {
+    event.preventDefault();
   }
 }
 
@@ -363,35 +447,49 @@ function enableWindowProtection() {
 
   isExamLockdown = true;
 
-  // 1. Force Kiosk mode & Fullscreen over entire primary display
+  // 1. Force Kiosk mode over entire primary display WITHOUT creating a macOS Space
   const display = screen.getPrimaryDisplay();
   try {
-    electronWindow.setBounds(display.bounds);
-    electronWindow.setFullScreen(true);
-    electronWindow.setKiosk(true);
-    electronWindow.setAlwaysOnTop(true, "screen-saver");
     electronWindow.setFullScreenable(false);
+    electronWindow.setBounds(display.bounds);
+    electronWindow.setKiosk(true);
+    electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
+    electronWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    electronWindow.focus();
   } catch (err) {
     console.warn("[VEYRA] Kiosk mode error:", err.message);
   }
 
-  // 2. Disable Right-click context menu
+  // 2. Hide Dock completely on macOS so bottom cursor hover cannot pop it up
+  if (process.platform === "darwin") {
+    try {
+      app.dock.hide();
+    } catch {
+      // ignore
+    }
+    disableMacTrackpadGestures();
+  }
+
+  // 3. Disable Right-click context menu
   electronWindow.webContents.on("context-menu", preventContextMenu);
 
-  // 3. Intercept & Block Cheat Shortcuts
+  // 4. Intercept & Block Cheat Shortcuts
   electronWindow.webContents.on("before-input-event", handleLockdownKeyInput);
 
-  // 4. Split Screen & Window Resize listeners
+  // 5. Trackpad swipe interception
+  electronWindow.on("swipe", preventSwipe);
+
+  // 6. Split Screen, Window Resize, and Blur listeners
   electronWindow.on("resize", checkAndEnforceDisplayIntegrity);
   electronWindow.on("move", checkAndEnforceDisplayIntegrity);
-  electronWindow.on("leave-full-screen", checkAndEnforceDisplayIntegrity);
   electronWindow.on("leave-kiosk", checkAndEnforceDisplayIntegrity);
+  electronWindow.on("blur", handleWindowBlur);
 
-  // 5. Active background display integrity monitor (every 2s)
+  // 7. Active background display integrity monitor (every 1.5s)
   if (splitScreenInterval) clearInterval(splitScreenInterval);
-  splitScreenInterval = setInterval(checkAndEnforceDisplayIntegrity, 2000);
+  splitScreenInterval = setInterval(checkAndEnforceDisplayIntegrity, 1500);
 
-  // 6. Active background application monitor (checks for newly opened cheating apps every 3.5s)
+  // 8. Active background application monitor (checks for newly opened cheating apps every 3.5s)
   if (appMonitorInterval) clearInterval(appMonitorInterval);
   appMonitorInterval = setInterval(async () => {
     if (!isExamLockdown || !electronWindow || electronWindow.isDestroyed()) return;
@@ -403,7 +501,7 @@ function enableWindowProtection() {
         details: { detectedApps: running },
       });
       try {
-        electronWindow.setAlwaysOnTop(true, "screen-saver");
+        electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
         electronWindow.focus();
       } catch {
         // ignore
@@ -429,15 +527,26 @@ function disableWindowProtection() {
 
   electronWindow.removeListener("resize", checkAndEnforceDisplayIntegrity);
   electronWindow.removeListener("move", checkAndEnforceDisplayIntegrity);
-  electronWindow.removeListener("leave-full-screen", checkAndEnforceDisplayIntegrity);
   electronWindow.removeListener("leave-kiosk", checkAndEnforceDisplayIntegrity);
+  electronWindow.removeListener("blur", handleWindowBlur);
+  electronWindow.removeListener("swipe", preventSwipe);
 
   try {
     electronWindow.setKiosk(false);
+    electronWindow.setVisibleOnAllWorkspaces(false);
     electronWindow.setAlwaysOnTop(false);
     electronWindow.setFullScreenable(true);
   } catch (err) {
     console.warn("[VEYRA] Exit kiosk error:", err.message);
+  }
+
+  if (process.platform === "darwin") {
+    try {
+      app.dock.show();
+    } catch {
+      // ignore
+    }
+    restoreMacTrackpadGestures();
   }
 
   electronWindow.webContents.removeListener("context-menu", preventContextMenu);
@@ -492,8 +601,9 @@ function handleLockdownKeyInput(event, input) {
 
   const isCmdOrCtrl = input.control || input.meta;
   const key = input.key?.toLowerCase();
+  const code = input.code?.toLowerCase();
 
-  // Block Copy, Cut, Paste (prevent pasting into AI agents or copying questions)
+  // 1. Block Copy, Cut, Paste (prevent pasting into AI agents or copying questions)
   if (isCmdOrCtrl && (key === "c" || key === "v" || key === "x")) {
     event.preventDefault();
     electronWindow?.webContents.send("proctor-violation", {
@@ -503,8 +613,8 @@ function handleLockdownKeyInput(event, input) {
     return;
   }
 
-  // Block App Switch / Task Switch (Cmd+Tab, Alt+Tab)
-  if ((input.alt || input.meta) && input.key === "Tab") {
+  // 2. Block App Switch / Task Switch (Cmd+Tab, Alt+Tab, Cmd+`)
+  if ((input.alt || input.meta || input.control) && (input.key === "Tab" || input.key === "`")) {
     event.preventDefault();
     electronWindow?.webContents.send("proctor-violation", {
       type: "APP_SWITCH_ATTEMPT",
@@ -513,14 +623,45 @@ function handleLockdownKeyInput(event, input) {
     return;
   }
 
-  // Handle Quit / Close shortcuts (Cmd+Q, Cmd+W) -> prompt with 1 flag warning
+  // 3. Block Spotlight / Siri / Alfred / Raycast (Cmd+Space, Ctrl+Space, Option+Space)
+  if ((isCmdOrCtrl || input.alt) && (input.key === " " || code === "space")) {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "SEARCH_ATTEMPT",
+      message: "System search (Spotlight / Raycast) is blocked during the exam.",
+    });
+    return;
+  }
+
+  // 4. Block Mission Control, App Exposé, Spaces shortcuts (Ctrl+Arrow keys, Ctrl+1..9)
+  if (input.control && ["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "MISSION_CONTROL_ATTEMPT",
+      message: "Mission Control and Workspace switching are blocked during the exam.",
+    });
+    return;
+  }
+  if (input.control && /^[0-9]$/.test(key)) {
+    event.preventDefault();
+    return;
+  }
+
+  // 5. Block Force Quit Applications dialog (Cmd+Opt+Esc)
+  if (input.meta && input.alt && key === "escape") {
+    event.preventDefault();
+    promptForceQuitWarning();
+    return;
+  }
+
+  // 6. Handle Quit / Close shortcuts (Cmd+Q, Cmd+W) -> prompt with 1 flag warning
   if (isCmdOrCtrl && (key === "q" || key === "w")) {
     event.preventDefault();
     promptForceQuitWarning();
     return;
   }
 
-  // Block Hide / Minimize (Cmd+H, Cmd+M)
+  // 7. Block Hide / Minimize (Cmd+H, Cmd+Opt+H, Cmd+M)
   if (isCmdOrCtrl && (key === "h" || key === "m")) {
     event.preventDefault();
     electronWindow?.webContents.send("proctor-violation", {
@@ -530,12 +671,33 @@ function handleLockdownKeyInput(event, input) {
     return;
   }
 
-  // Block DevTools / Reload / Fullscreen toggle (F11, F12, Cmd+R, Cmd+Opt+I)
+  // 8. Block Screenshots (Cmd+Shift+3, Cmd+Shift+4, Cmd+Shift+5, PrintScreen)
   if (
-    input.key === "F11" ||
-    input.key === "F12" ||
+    (isCmdOrCtrl && input.shift && ["3", "4", "5"].includes(key)) ||
+    key === "printscreen"
+  ) {
+    event.preventDefault();
+    electronWindow?.webContents.send("proctor-violation", {
+      type: "SCREENSHOT_ATTEMPT",
+      message: "External screenshot utilities are blocked during the exam.",
+    });
+    return;
+  }
+
+  // 9. Block Browser Navigation / New Window / New Tab / Print / Save (Cmd+N, Cmd+T, Cmd+P, Cmd+S, Cmd+O, Cmd+U, Cmd+L)
+  if (
+    isCmdOrCtrl &&
+    ["n", "t", "p", "s", "o", "u", "l", ",", "b"].includes(key)
+  ) {
+    event.preventDefault();
+    return;
+  }
+
+  // 10. Block DevTools / Reload / Function Keys (F1..F12, Cmd+R, Cmd+Opt+I, Cmd+Opt+J, Cmd+Opt+C)
+  if (
+    /^f(1[0-2]|[1-9])$/.test(key) ||
     (isCmdOrCtrl && key === "r") ||
-    (isCmdOrCtrl && input.alt && key === "i")
+    (isCmdOrCtrl && input.alt && ["i", "j", "c"].includes(key))
   ) {
     event.preventDefault();
   }
@@ -558,6 +720,17 @@ ipcMain.handle("get-running-prohibited-apps", async () => {
 
 ipcMain.handle("close-prohibited-apps", async () => {
   return await closeProhibitedApps();
+});
+
+ipcMain.handle("enable-fullscreen", () => {
+  if (electronWindow && !electronWindow.isDestroyed()) {
+    const display = screen.getPrimaryDisplay();
+    electronWindow.setFullScreenable(false);
+    electronWindow.setBounds(display.bounds);
+    electronWindow.setKiosk(true);
+    return { success: true };
+  }
+  return { success: false };
 });
 
 // Open snapshot folders in Finder/Explorer
