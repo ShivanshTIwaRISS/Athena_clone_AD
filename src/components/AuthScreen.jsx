@@ -1,78 +1,14 @@
-// src/components/AuthScreen.jsx — VEYRA Login & Sign Up Screen
+// src/components/AuthScreen.jsx
+// VEYRA Candidate Examination Terminal Authentication Portal
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { loginUser, registerUser, saveToken } from '../services/api';
+import { TermsOfServiceModal, PrivacyPolicyModal } from './LegalModals';
 
-// ── SVG Icon Components (Clean React JSX) ───────────────────────────────────
-function LockIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function CameraIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M23 7l-7 5 7 5V7z" />
-      <rect x="1" y="5" width="15" height="14" rx="2" />
-    </svg>
-  );
-}
-
-function TimerIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function ShieldIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-function ChartIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  );
-}
-
-function LoginIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-      <polyline points="10 17 15 12 10 7" />
-      <line x1="15" y1="12" x2="3" y2="12" />
-    </svg>
-  );
-}
-
-function UserPlusIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-      <line x1="19" y1="8" x2="19" y2="14" />
-      <line x1="22" y1="11" x2="16" y2="11" />
-    </svg>
-  );
-}
-
+// Crisp SVG Icons (Native, non-bloated, properly sized)
 function EyeIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -81,7 +17,7 @@ function EyeIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
       <line x1="1" y1="1" x2="23" y2="23" />
@@ -89,38 +25,39 @@ function EyeOffIcon() {
   );
 }
 
-/**
- * AuthScreen
- * Clean Login & Sign Up flow with proper validation, password strength meter,
- * and seamless JWT persistence.
- */
 export default function AuthScreen({ onAuthSuccess, backendOnline }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
 
-  // Shared form state
+  // Form inputs
   const [name, setName]           = useState('');
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
   const [confirm, setConfirm]     = useState('');
+  const [agreed, setAgreed]       = useState(false);
   const [showPass, setShowPass]   = useState(false);
   const [showConf, setShowConf]   = useState(false);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
   const [success, setSuccess]     = useState(null);
 
-  function switchTab(t) {
-    setTab(t);
+  // Legal Modals
+  const [showTos, setShowTos]         = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
+  function switchTab(nextTab) {
+    setTab(nextTab);
     setError(null);
     setSuccess(null);
     setName('');
     setEmail('');
     setPassword('');
     setConfirm('');
+    setAgreed(false);
     setShowPass(false);
     setShowConf(false);
   }
 
-  // ── Password strength evaluation ───────────────────────────────────────────
+  // Password strength logic
   function getStrength(pw) {
     if (!pw) return 0;
     let score = 0;
@@ -129,18 +66,17 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
     if (/[A-Z]/.test(pw)) score++;
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
-    return score; // 0–5
+    return score;
   }
 
-  const strength       = getStrength(password);
-  const strengthLabel  = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'][strength] || '';
-  const strengthColor  = ['', '#e11d48', '#d97706', '#f59e0b', '#16a34a', '#15803d'][strength] || '#e11d48';
+  const strength = getStrength(password);
+  const strengthLabels = ['', 'Inadequate', 'Weak', 'Acceptable', 'Strong', 'High Security'];
+  const strengthColors = ['', '#dc2626', '#ea580c', '#d97706', '#16a34a', '#059669'];
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   async function handleLogin(e) {
     e.preventDefault();
     if (!email.trim() || !password) {
-      return setError('Email and password are required.');
+      return setError('Candidate email and access password are required.');
     }
     setLoading(true);
     setError(null);
@@ -148,12 +84,12 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
     try {
       const res = await loginUser(email.trim(), password);
       saveToken(res.token);
-      setSuccess('Login successful! Entering platform...');
+      setSuccess('Credentials verified. Initializing candidate workstation...');
       setTimeout(() => {
         onAuthSuccess({ userId: res.user.userId, name: res.user.name, email: res.user.email, token: res.token });
-      }, 500);
+      }, 550);
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Authentication failed. Please verify candidate credentials.');
     } finally {
       setLoading(false);
     }
@@ -162,20 +98,23 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
   async function handleSignup(e) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password || !confirm) {
-      return setError('All fields are required.');
+      return setError('All required registration fields must be completed.');
     }
     if (name.trim().length < 2) {
-      return setError('Name must be at least 2 characters.');
+      return setError('Candidate full name must be at least 2 characters.');
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      return setError('Please enter a valid email address.');
+      return setError('Please provide a valid institutional email address.');
     }
     if (password.length < 6) {
-      return setError('Password must be at least 6 characters.');
+      return setError('Password must be at least 6 characters in length.');
     }
     if (password !== confirm) {
-      return setError('Passwords do not match.');
+      return setError('Password confirmation does not match.');
+    }
+    if (!agreed) {
+      return setError('You must review and accept the Examination Terms and Proctoring Policy.');
     }
 
     setLoading(true);
@@ -184,12 +123,12 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
     try {
       const res = await registerUser(name.trim(), email.trim(), password);
       saveToken(res.token);
-      setSuccess('Account created! Welcome to VEYRA...');
+      setSuccess('Candidate account established. Opening assessment portal...');
       setTimeout(() => {
         onAuthSuccess({ userId: res.user.userId, name: res.user.name, email: res.user.email, token: res.token });
-      }, 600);
+      }, 650);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Registration could not be completed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -197,111 +136,118 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
 
   const isOffline = !backendOnline;
 
-  const features = [
-    { icon: <LockIcon />, label: 'Full Lockdown Proctoring' },
-    { icon: <CameraIcon />, label: 'Webcam & Screen Monitoring' },
-    { icon: <TimerIcon />, label: '30-Minute Timed Assessments' },
-    { icon: <ShieldIcon />, label: 'Tamper-Proof Session Records' },
-    { icon: <ChartIcon />, label: 'Instant Results & Analytics' },
-  ];
-
   return (
-    <div className="auth-shell">
-      {/* Left decorative brand panel */}
-      <div className="auth-left-panel">
-        <div className="auth-brand-block">
-          <div className="auth-brand-logo">
-            <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
-              <rect width="48" height="48" rx="12" fill="var(--brand-blue)" />
-              <path d="M14 34L24 14L34 34" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M17.5 27H30.5" stroke="white" strokeWidth="3" strokeLinecap="round" />
-            </svg>
+    <div className="auth-terminal-viewport">
+      {/* Institutional Top Status Bar */}
+      <header className="auth-terminal-header">
+        <div className="auth-terminal-brand">
+          <div className="auth-crest">V</div>
+          <div className="auth-brand-text">
+            <span className="auth-brand-title">VEYRA</span>
+            <span className="auth-brand-subtitle">Candidate Assessment Terminal</span>
           </div>
-          <div className="auth-brand-name">VEYRA</div>
-          <div className="auth-brand-tagline">Verified Examination &amp; Yield-based Response Assessment</div>
         </div>
 
-        <div className="auth-feature-list">
-          {features.map(({ icon, label }) => (
-            <div className="auth-feature-item" key={label}>
-              <span className="auth-feature-icon">{icon}</span>
-              <span>{label}</span>
-            </div>
-          ))}
+        <div className="auth-terminal-status-group">
+          <div className={`terminal-badge ${isOffline ? 'badge-offline' : 'badge-online'}`}>
+            <span className="badge-dot" />
+            {isOffline ? 'SERVER DISCONNECTED' : 'PROCTORING SERVER ONLINE'}
+          </div>
+          <div className="terminal-badge badge-kiosk">
+            KIOSK LOCKDOWN READY
+          </div>
         </div>
+      </header>
 
-        <div className="auth-left-footer">
-          Secure · Reliable · Professional
-        </div>
-      </div>
-
-      {/* Right form panel */}
-      <div className="auth-right-panel">
-        <div className="auth-card">
-          {/* Backend offline warning banner */}
+      {/* Main Authentication Card */}
+      <main className="auth-terminal-body">
+        <div className="auth-console-card">
+          {/* Offline Notice */}
           {isOffline && (
-            <div className="auth-offline-banner">
-              <span className="auth-offline-dot" />
-              Backend server is unreachable. Please start the backend and retry.
+            <div className="auth-alert-banner alert-error" role="alert">
+              <strong>Server Unavailable:</strong> Examination backend is unreachable. Verify connection and retry.
             </div>
           )}
 
-          {/* Tab switcher */}
-          <div className="auth-tab-row">
+          {/* Tab Selector */}
+          <div className="auth-tab-bar" role="tablist">
             <button
               type="button"
-              className={`auth-tab ${tab === 'login' ? 'auth-tab--active' : ''}`}
+              role="tab"
+              aria-selected={tab === 'login'}
+              className={`auth-tab-btn ${tab === 'login' ? 'active' : ''}`}
               onClick={() => switchTab('login')}
             >
-              Sign In
+              Candidate Sign In
             </button>
             <button
               type="button"
-              className={`auth-tab ${tab === 'signup' ? 'auth-tab--active' : ''}`}
+              role="tab"
+              aria-selected={tab === 'signup'}
+              className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
               onClick={() => switchTab('signup')}
             >
-              Create Account
+              New Registration
             </button>
           </div>
 
-          {/* ── LOGIN FORM ── */}
-          {tab === 'login' && (
-            <form className="auth-form" onSubmit={handleLogin} noValidate>
-              <h1 className="auth-form-title">Welcome back</h1>
-              <p className="auth-form-sub">Sign in to your VEYRA candidate account</p>
+          {/* Skeleton state during active submission */}
+          {loading && (
+            <div className="auth-loading-skeleton" aria-live="polite" aria-busy="true">
+              <div className="skeleton-text" style={{ width: '40%', height: 16 }} />
+              <div className="skeleton-box" style={{ width: '100%', height: 38, marginBottom: 16 }} />
+              <div className="skeleton-text" style={{ width: '30%', height: 16 }} />
+              <div className="skeleton-box" style={{ width: '100%', height: 38, marginBottom: 16 }} />
+              <div className="skeleton-box" style={{ width: '100%', height: 42, marginTop: 12 }} />
+              <p className="skeleton-label">Authenticating workstation session with proctor authority...</p>
+            </div>
+          )}
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="login-email">Email Address</label>
+          {/* ── SIGN IN FORM ── */}
+          {!loading && tab === 'login' && (
+            <form className="auth-console-form" onSubmit={handleLogin} noValidate>
+              <div className="form-intro">
+                <h1 className="form-heading">Candidate Sign In</h1>
+                <p className="form-descriptor">Enter your authorized examination credentials to begin.</p>
+              </div>
+
+              <div className="form-field">
+                <label className="field-label" htmlFor="login-email">Candidate Email Address</label>
                 <input
                   id="login-email"
                   type="email"
-                  className="auth-input"
-                  placeholder="you@example.com"
+                  className="field-input"
+                  placeholder="name@institution.edu"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   disabled={loading || isOffline}
                   autoComplete="email"
+                  required
                 />
               </div>
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="login-password">Password</label>
-                <div className="auth-input-wrap">
+              <div className="form-field">
+                <div className="field-label-row">
+                  <label className="field-label" htmlFor="login-password">Access Password</label>
+                </div>
+                <div className="field-input-wrapper">
                   <input
                     id="login-password"
                     type={showPass ? 'text' : 'password'}
-                    className="auth-input auth-input--with-icon"
-                    placeholder="Enter your password"
+                    className="field-input field-input-with-button"
+                    placeholder="Enter candidate password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     disabled={loading || isOffline}
                     autoComplete="current-password"
+                    required
                   />
                   <button
                     type="button"
-                    className="auth-eye-btn"
+                    className="field-visibility-btn"
                     tabIndex={-1}
                     onClick={() => setShowPass(v => !v)}
+                    title={showPass ? 'Hide password' : 'Show password'}
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                   >
                     {showPass ? <EyeOffIcon /> : <EyeIcon />}
@@ -309,167 +255,211 @@ export default function AuthScreen({ onAuthSuccess, backendOnline }) {
                 </div>
               </div>
 
-              {error && <div className="auth-error-msg">{error}</div>}
-              {success && <div className="auth-success-msg">{success}</div>}
+              {/* Demo Account Quick Note */}
+              <div className="auth-demo-hint">
+                <span className="demo-hint-title">Default Candidate Access:</span> candidate@veyra.io | Password123!
+              </div>
+
+              {error && <div className="auth-alert-banner alert-error" role="alert">{error}</div>}
+              {success && <div className="auth-alert-banner alert-success" role="status">{success}</div>}
 
               <button
                 id="btn-login-submit"
                 type="submit"
-                className="auth-submit-btn"
+                className="btn-auth-primary"
                 disabled={loading || isOffline}
               >
-                {loading ? (
-                  <span className="auth-spinner" />
-                ) : (
-                  <>
-                    <LoginIcon />
-                    Sign In
-                  </>
-                )}
+                Sign In to Assessment Portal
               </button>
 
-              <p className="auth-switch-hint">
-                Don&apos;t have an account?{' '}
-                <button type="button" className="auth-link-btn" onClick={() => switchTab('signup')}>
-                  Create one now
+              <div className="auth-secondary-row">
+                <span>First-time test taker?</span>{' '}
+                <button type="button" className="link-button" onClick={() => switchTab('signup')}>
+                  Register Candidate Profile
                 </button>
-              </p>
+              </div>
             </form>
           )}
 
-          {/* ── SIGN UP FORM ── */}
-          {tab === 'signup' && (
-            <form className="auth-form" onSubmit={handleSignup} noValidate>
-              <h1 className="auth-form-title">Create account</h1>
-              <p className="auth-form-sub">Register as a new VEYRA candidate</p>
+          {/* ── REGISTRATION FORM ── */}
+          {!loading && tab === 'signup' && (
+            <form className="auth-console-form" onSubmit={handleSignup} noValidate>
+              <div className="form-intro">
+                <h1 className="form-heading">Register Candidate Account</h1>
+                <p className="form-descriptor">Create an identity record for supervised assessments.</p>
+              </div>
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="signup-name">Full Name</label>
+              <div className="form-field">
+                <label className="field-label" htmlFor="signup-name">Candidate Full Legal Name</label>
                 <input
                   id="signup-name"
                   type="text"
-                  className="auth-input"
-                  placeholder="Aditya Sharma"
+                  className="field-input"
+                  placeholder="e.g. Shivansh Tiwari"
                   value={name}
                   onChange={e => setName(e.target.value)}
                   disabled={loading || isOffline}
                   autoComplete="name"
+                  required
                 />
               </div>
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="signup-email">Email Address</label>
+              <div className="form-field">
+                <label className="field-label" htmlFor="signup-email">Institutional Email Address</label>
                 <input
                   id="signup-email"
                   type="email"
-                  className="auth-input"
-                  placeholder="you@example.com"
+                  className="field-input"
+                  placeholder="name@institution.edu"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   disabled={loading || isOffline}
                   autoComplete="email"
+                  required
                 />
               </div>
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="signup-password">Password</label>
-                <div className="auth-input-wrap">
+              <div className="form-field">
+                <label className="field-label" htmlFor="signup-password">Create Secure Password</label>
+                <div className="field-input-wrapper">
                   <input
                     id="signup-password"
                     type={showPass ? 'text' : 'password'}
-                    className="auth-input auth-input--with-icon"
-                    placeholder="At least 6 characters"
+                    className="field-input field-input-with-button"
+                    placeholder="Minimum 6 characters"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     disabled={loading || isOffline}
                     autoComplete="new-password"
+                    required
                   />
                   <button
                     type="button"
-                    className="auth-eye-btn"
+                    className="field-visibility-btn"
                     tabIndex={-1}
                     onClick={() => setShowPass(v => !v)}
+                    title={showPass ? 'Hide password' : 'Show password'}
                     aria-label={showPass ? 'Hide password' : 'Show password'}
                   >
                     {showPass ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
-                {/* Password strength bar */}
+
                 {password && (
-                  <div className="auth-strength-bar-wrap">
-                    <div className="auth-strength-bar">
-                      {[1, 2, 3, 4, 5].map(i => (
+                  <div className="password-security-indicator">
+                    <div className="strength-track">
+                      {[1, 2, 3, 4, 5].map(step => (
                         <div
-                          key={i}
-                          className="auth-strength-segment"
-                          style={{ background: i <= strength ? strengthColor : 'var(--bg-card-2)' }}
+                          key={step}
+                          className="strength-step"
+                          style={{
+                            background: step <= strength ? strengthColors[strength] : 'var(--border)',
+                          }}
                         />
                       ))}
                     </div>
-                    <span className="auth-strength-label" style={{ color: strengthColor }}>
-                      {strengthLabel}
+                    <span className="strength-text" style={{ color: strengthColors[strength] }}>
+                      Complexity: {strengthLabels[strength]}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="auth-field">
-                <label className="auth-label" htmlFor="signup-confirm">Confirm Password</label>
-                <div className="auth-input-wrap">
+              <div className="form-field">
+                <label className="field-label" htmlFor="signup-confirm">Confirm Password</label>
+                <div className="field-input-wrapper">
                   <input
                     id="signup-confirm"
                     type={showConf ? 'text' : 'password'}
-                    className={`auth-input auth-input--with-icon${confirm && confirm !== password ? ' auth-input--error' : ''}`}
+                    className={`field-input field-input-with-button ${confirm && confirm !== password ? 'field-error' : ''}`}
                     placeholder="Re-enter password"
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     disabled={loading || isOffline}
                     autoComplete="new-password"
+                    required
                   />
                   <button
                     type="button"
-                    className="auth-eye-btn"
+                    className="field-visibility-btn"
                     tabIndex={-1}
                     onClick={() => setShowConf(v => !v)}
+                    title={showConf ? 'Hide password' : 'Show password'}
                     aria-label={showConf ? 'Hide password' : 'Show password'}
                   >
                     {showConf ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
                 {confirm && confirm !== password && (
-                  <span className="auth-field-hint auth-field-hint--error">Passwords do not match</span>
+                  <span className="field-error-message">Passwords do not match</span>
                 )}
               </div>
 
-              {error && <div className="auth-error-msg">{error}</div>}
-              {success && <div className="auth-success-msg">{success}</div>}
+              {/* Terms & Privacy Consent Checkbox */}
+              <div className="form-field-checkbox">
+                <input
+                  id="auth-agreement-check"
+                  type="checkbox"
+                  className="checkbox-input"
+                  checked={agreed}
+                  onChange={e => setAgreed(e.target.checked)}
+                  disabled={loading || isOffline}
+                />
+                <label htmlFor="auth-agreement-check" className="checkbox-label">
+                  I agree to the{' '}
+                  <button type="button" className="link-button inline-link" onClick={() => setShowTos(true)}>
+                    Examination Terms of Service
+                  </button>{' '}
+                  and{' '}
+                  <button type="button" className="link-button inline-link" onClick={() => setShowPrivacy(true)}>
+                    Biometric Proctoring Policy
+                  </button>.
+                </label>
+              </div>
+
+              {error && <div className="auth-alert-banner alert-error" role="alert">{error}</div>}
+              {success && <div className="auth-alert-banner alert-success" role="status">{success}</div>}
 
               <button
                 id="btn-signup-submit"
                 type="submit"
-                className="auth-submit-btn"
-                disabled={loading || isOffline}
+                className="btn-auth-primary"
+                disabled={loading || isOffline || !agreed}
               >
-                {loading ? (
-                  <span className="auth-spinner" />
-                ) : (
-                  <>
-                    <UserPlusIcon />
-                    Create Account
-                  </>
-                )}
+                Create Candidate Account
               </button>
 
-              <p className="auth-switch-hint">
-                Already have an account?{' '}
-                <button type="button" className="auth-link-btn" onClick={() => switchTab('login')}>
-                  Sign in instead
+              <div className="auth-secondary-row">
+                <span>Already have a candidate ID?</span>{' '}
+                <button type="button" className="link-button" onClick={() => switchTab('login')}>
+                  Return to Sign In
                 </button>
-              </p>
+              </div>
             </form>
           )}
         </div>
-      </div>
+      </main>
+
+      {/* Institutional Governance Footer */}
+      <footer className="auth-terminal-footer">
+        <div className="footer-meta">
+          <span>VEYRA Assessment Engine | v2.4 Enterprise</span>
+          <span>Station Telemetry Cryptographically Signed</span>
+        </div>
+        <div className="footer-links">
+          <button type="button" className="footer-link-btn" onClick={() => setShowTos(true)}>
+            Terms of Examination
+          </button>
+          <span className="footer-divider">|</span>
+          <button type="button" className="footer-link-btn" onClick={() => setShowPrivacy(true)}>
+            Privacy &amp; Telemetry Policy
+          </button>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      <TermsOfServiceModal isOpen={showTos} onClose={() => setShowTos(false)} />
+      <PrivacyPolicyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </div>
   );
 }

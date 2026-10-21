@@ -162,7 +162,7 @@ export default function ExamResults({
         </div>
         <div className="meta-card">
           <span className="meta-card-label">Student ID</span>
-          <span className="meta-card-value">{sessionData?.userId || '—'}</span>
+          <span className="meta-card-value">{sessionData?.userId || 'N/A'}</span>
         </div>
         <div className="meta-card">
           <span className="meta-card-label">Time Elapsed</span>
@@ -236,7 +236,7 @@ export default function ExamResults({
               className={`filter-tab-btn tab-skipped ${filter === 'SKIPPED' ? 'active' : ''}`}
               onClick={() => setFilter('SKIPPED')}
             >
-              — Skipped ({skippedCount})
+              Skipped ({skippedCount})
             </button>
           </div>
         </div>
@@ -299,7 +299,7 @@ export default function ExamResults({
                     )}
                     {isSkipped && (
                       <span className="status-pill pill-skipped">
-                        — Unattempted &bull; 0 Marks
+                        Unattempted &bull; 0 Marks
                       </span>
                     )}
                   </div>
@@ -366,7 +366,7 @@ export default function ExamResults({
                   {isSkipped && (
                     <div className="user-ans-note note-skipped">
                       <span>
-                        — You did not answer this question.
+                        Unattempted: You did not record an answer for this question.
                         The correct answer is <strong>Option {optLetters[item.correctAnswer]}: {item.correctOptionText}</strong>.
                       </span>
                     </div>

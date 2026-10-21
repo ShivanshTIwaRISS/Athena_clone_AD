@@ -455,7 +455,7 @@ export default function ExamArena({
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>Answer auto-saved — you can change your selection at any time.</span>
+                  <span>Answer auto-saved. You can modify your selection at any time.</span>
                 </div>
               )}
             </>

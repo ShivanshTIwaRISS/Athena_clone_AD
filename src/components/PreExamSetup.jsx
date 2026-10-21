@@ -35,7 +35,7 @@ export default function PreExamSetup({
     {
       id: 'backend',
       label: 'Backend Server',
-      sub: backendOnline ? 'Connected and ready' : 'Not reachable — check server',
+      sub: backendOnline ? 'Connected and ready' : 'Not reachable: verify local server',
       pass: backendOnline,
       action: !backendOnline ? (
         <button type="button" className="btn btn-outline btn-sm" onClick={onCheckBackend}>
@@ -46,7 +46,7 @@ export default function PreExamSetup({
     {
       id: 'camera',
       label: 'Webcam Access',
-      sub: cameraEnabled ? 'Feed active — proctoring ready' : 'Permission required for proctoring',
+      sub: cameraEnabled ? 'Feed active: proctoring ready' : 'Permission required for proctoring',
       pass: cameraEnabled,
       action: !cameraEnabled ? (
         <button type="button" className="btn btn-primary btn-sm" onClick={onGetCameraAccess}>
@@ -57,7 +57,7 @@ export default function PreExamSetup({
     {
       id: 'fullscreen',
       label: 'Full Screen Mode',
-      sub: fullScreen ? 'Active — window integrity secured' : 'Required before exam begins',
+      sub: fullScreen ? 'Active: window integrity secured' : 'Required before exam begins',
       pass: fullScreen,
       action: !fullScreen ? (
         <button type="button" className="btn btn-primary btn-sm" onClick={onEnableFullScreen}>
@@ -136,9 +136,9 @@ export default function PreExamSetup({
           <div className="verification-checklist">
             {checks.map((c) => (
               <div key={c.id} className={`check-item ${c.pass ? 'pass' : 'fail'}`}>
-                <div className={`check-icon ${c.pass ? 'pass' : 'fail'}`}>
-                  {c.pass ? '✓' : '○'}
-                </div>
+                <span className={`check-status-tag ${c.pass ? 'tag-passed' : 'tag-pending'}`}>
+                  {c.pass ? 'READY' : 'ACTION'}
+                </span>
                 <div style={{ flex: 1 }}>
                   <div className="check-label">{c.label}</div>
                   <div className="check-sub">{c.sub}</div>

@@ -111,7 +111,7 @@ export default function Header({
         {/* Backend connectivity */}
         <div
           className={`backend-status-badge ${backendOnline ? 'online' : 'offline'}`}
-          title={backendOnline ? 'Backend API connected' : 'Backend offline — check server'}
+          title={backendOnline ? 'Backend API connected' : 'Backend offline: verify server'}
         >
           <span className="status-indicator" />
           {backendOnline ? 'API Online' : 'API Offline'}
@@ -126,7 +126,7 @@ export default function Header({
             <div className="candidate-meta">
               <span className="candidate-name">{studentName}</span>
               <span className="candidate-id" title={userEmail || userId}>
-                {userEmail || userId || (sessionId ? sessionId.slice(0, 14) : '—')}
+                {userEmail || userId || (sessionId ? sessionId.slice(0, 14) : 'Active')}
               </span>
             </div>
           </div>

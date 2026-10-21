@@ -11,6 +11,7 @@ import ExamResults from './components/ExamResults';
 import AttemptHistory from './components/AttemptHistory';
 import RulesModal from './components/RulesModal';
 import AuthScreen from './components/AuthScreen';
+import { TermsOfServiceModal, PrivacyPolicyModal } from './components/LegalModals';
 
 // Services
 import {
@@ -73,8 +74,10 @@ export default function App() {
   const [resultData, setResultData] = useState(null);
   const [finalSessionData, setFinalSessionData] = useState(null);
 
-  // Rules Modal
+  // Rules and Legal Modals
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [tosOpen, setTosOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   // Refs
   const videoRef = useRef(null);
@@ -592,8 +595,33 @@ export default function App() {
         )}
       </main>}
 
-      {/* Rules & Guidelines Modal */}
+      {/* Institutional App Footer — visible outside exam and auth */}
+      {stage !== 'AUTH' && stage !== 'EXAM' && (
+        <footer className="app-institutional-footer">
+          <div className="footer-left">
+            <span>VEYRA Secure Assessment Engine | Enterprise v2.4</span>
+            <span>Station ID: {userId || 'Candidate Terminal'}</span>
+          </div>
+          <div className="footer-right">
+            <button type="button" className="footer-link-btn" onClick={() => setTosOpen(true)}>
+              Terms of Examination
+            </button>
+            <span className="footer-sep">|</span>
+            <button type="button" className="footer-link-btn" onClick={() => setPrivacyOpen(true)}>
+              Biometric &amp; Proctoring Privacy
+            </button>
+            <span className="footer-sep">|</span>
+            <button type="button" className="footer-link-btn" onClick={() => setRulesOpen(true)}>
+              Examination Regulations
+            </button>
+          </div>
+        </footer>
+      )}
+
+      {/* Rules and Legal Modals */}
       {stage !== 'AUTH' && <RulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />}
+      <TermsOfServiceModal isOpen={tosOpen} onClose={() => setTosOpen(false)} />
+      <PrivacyPolicyModal isOpen={privacyOpen} onClose={() => setPrivacyOpen(false)} />
     </div>
   );
 }
