@@ -1118,5 +1118,177 @@
         "answeredAt": "2026-10-19T08:51:00.259Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792571641917",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-21T08:34:01.920Z",
+    "submittedAt": null,
+    "status": "in-progress",
+    "attempted": 1,
+    "correct": 0,
+    "wrong": 1,
+    "flagCount": 3,
+    "flags": [
+      {
+        "flagId": "flag-1792571652136",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 2
+        },
+        "timestamp": "2026-10-21T08:34:12.136Z"
+      },
+      {
+        "flagId": "flag-1792571680034",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 2
+        },
+        "timestamp": "2026-10-21T08:34:40.034Z"
+      },
+      {
+        "flagId": "flag-1792571697531",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 2
+        },
+        "timestamp": "2026-10-21T08:34:57.531Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:34:04.235Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792571715715",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-21T08:35:15.715Z",
+    "submittedAt": "2026-10-21T08:35:32.679Z",
+    "status": "submitted",
+    "attempted": 7,
+    "correct": 4,
+    "wrong": 3,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:35:17.440Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:35:21.974Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T08:35:23.597Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:35:25.314Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T08:35:27.207Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T08:35:29.063Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T08:35:30.747Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792572011231",
+    "userId": "user-1792571989014-k4iod",
+    "name": "Shivansh",
+    "startedAt": "2026-10-21T08:40:11.232Z",
+    "submittedAt": "2026-10-21T08:40:37.652Z",
+    "status": "submitted",
+    "attempted": 5,
+    "correct": 0,
+    "wrong": 5,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:40:22.299Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:40:28.587Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:40:30.213Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:40:31.821Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T08:40:33.509Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792573357761",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-21T09:02:37.761Z",
+    "submittedAt": "2026-10-21T09:02:37.767Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T09:02:37.764Z"
+      }
+    ]
   }
 ]

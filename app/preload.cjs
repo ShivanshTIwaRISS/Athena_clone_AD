@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('veyra', {
   // ── Lockdown & Anti-Cheat ───────────────────────────────────────────────
   enterExamLockdown: () => ipcRenderer.invoke('enter-exam-lockdown'),
   exitExamLockdown: () => ipcRenderer.invoke('exit-exam-lockdown'),
+  getRunningProhibitedApps: () => ipcRenderer.invoke('get-running-prohibited-apps'),
+  closeProhibitedApps: () => ipcRenderer.invoke('close-prohibited-apps'),
   registerProctorViolationListener: (callback) => {
     const fn = (event, violation) => callback(violation);
     ipcRenderer.on('proctor-violation', fn);

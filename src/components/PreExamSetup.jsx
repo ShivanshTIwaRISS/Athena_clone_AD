@@ -1,5 +1,5 @@
 // src/components/PreExamSetup.jsx
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 export default function PreExamSetup({
@@ -20,6 +20,39 @@ export default function PreExamSetup({
   errorMessage,
   onOpenRules,
 }) {
+  const [prohibitedApps, setProhibitedApps] = useState([]);
+  const [isClosingApps, setIsClosingApps] = useState(false);
+
+  const checkProhibitedApps = useCallback(async () => {
+    if (window.veyra?.getRunningProhibitedApps) {
+      try {
+        const apps = await window.veyra.getRunningProhibitedApps();
+        setProhibitedApps(Array.isArray(apps) ? apps : []);
+      } catch {
+        setProhibitedApps([]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    checkProhibitedApps();
+    const interval = setInterval(checkProhibitedApps, 3000);
+    return () => clearInterval(interval);
+  }, [checkProhibitedApps]);
+
+  const handleCloseProhibitedApps = async () => {
+    setIsClosingApps(true);
+    try {
+      if (window.veyra?.closeProhibitedApps) {
+        await window.veyra.closeProhibitedApps();
+        await new Promise((r) => setTimeout(r, 800));
+        await checkProhibitedApps();
+      }
+    } finally {
+      setIsClosingApps(false);
+    }
+  };
+
   useEffect(() => {
     if (videoRef?.current && mediaStream && videoRef.current.srcObject !== mediaStream) {
       videoRef.current.srcObject = mediaStream;
@@ -28,7 +61,7 @@ export default function PreExamSetup({
   }, [videoRef, mediaStream]);
 
   const isReadyToStart = Boolean(
-    userId.trim() && name.trim() && cameraEnabled && fullScreen && backendOnline && !isStarting
+    userId.trim() && name.trim() && cameraEnabled && fullScreen && backendOnline && prohibitedApps.length === 0 && !isStarting
   );
 
   const checks = [
@@ -64,6 +97,34 @@ export default function PreExamSetup({
           Enable
         </button>
       ) : null,
+    },
+    {
+      id: 'backgroundApps',
+      label: 'Background Applications',
+      sub: prohibitedApps.length === 0
+        ? 'No prohibited applications detected'
+        : `${prohibitedApps.length} external app(s) active: ${prohibitedApps.slice(0, 3).join(', ')}${prohibitedApps.length > 3 ? '...' : ''}`,
+      pass: prohibitedApps.length === 0,
+      action: prohibitedApps.length > 0 ? (
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={handleCloseProhibitedApps}
+          disabled={isClosingApps}
+          title="Quit external background applications"
+        >
+          {isClosingApps ? 'Closing Apps…' : 'Close Background Apps'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={checkProhibitedApps}
+          title="Re-scan running applications"
+        >
+          Re-scan
+        </button>
+      ),
     },
     {
       id: 'identity',

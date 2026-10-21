@@ -2,12 +2,15 @@
  * VEYRA Examination Platform - Electron Main Process
  * Smart Assessments. Seamless Execution.
  */
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, screen } from "electron";
 import { Buffer } from "node:buffer";
 import path from "path";
 import fs from "fs";
-import { spawn } from "child_process";
+import { spawn, exec } from "child_process";
+import { promisify } from "util";
 import { createServer } from "net";
+
+const execAsync = promisify(exec);
 
 let electronWindow = null;
 let backendProcess = null;
@@ -196,28 +199,163 @@ function createWindow(port = 3000) {
   });
 }
 
-// ─── Screen Capture ───────────────────────────────────────────────────────────
+// ─── Prohibited Application Enforcement ──────────────────────────────────────
+const PROHIBITED_APPS = [
+  "Google Chrome",
+  "Brave Browser",
+  "Safari",
+  "Arc",
+  "Microsoft Edge",
+  "Firefox",
+  "Opera",
+  "WhatsApp",
+  "Telegram",
+  "Discord",
+  "Slack",
+  "ChatGPT",
+  "Claude",
+  "Zoom",
+  "Microsoft Teams",
+  "Skype",
+  "Code",
+  "Cursor",
+  "Sublime Text",
+  "Notes",
+  "TextEdit",
+  "Terminal",
+  "iTerm2",
+  "TeamViewer",
+  "AnyDesk",
+];
+
+async function getRunningProhibitedApps() {
+  if (process.platform === "darwin") {
+    try {
+      const script = `tell application "System Events" to get name of every process where background only is false`;
+      const { stdout } = await execAsync(`osascript -e '${script}'`);
+      const running = stdout.split(",").map((s) => s.trim());
+      return running.filter((name) =>
+        PROHIBITED_APPS.some((p) => p.toLowerCase() === name.toLowerCase())
+      );
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+async function closeProhibitedApps() {
+  if (process.platform === "darwin") {
+    try {
+      const script = `
+tell application "System Events"
+  set runningApps to name of every process where background only is false
+end tell
+repeat with appName in runningApps
+  set aName to appName as text
+  if aName is not "Finder" and aName is not "Electron" and aName is not "VEYRA" and aName is not "loginwindow" then
+    try
+      tell application aName to quit
+    end try
+  end if
+end repeat
+`;
+      await execAsync(`osascript -e '${script.replace(/'/g, "'\\''")}'`);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+// ─── Screen Capture (Full Physical Desktop Screen) ───────────────────────────
 async function captureAndSaveScreen() {
   if (!electronWindow || electronWindow.isDestroyed()) return null;
+  const fileName = `${Date.now()}-screen.jpg`;
+  const dir = getScreenSnapDir();
+  const filePath = path.join(dir, fileName);
+
   try {
+    // 1. On macOS, use native screencapture -x to capture the entire physical retina display
+    // This captures the entire desktop screen (all split views, side-by-side apps, secondary windows)
+    if (process.platform === "darwin") {
+      await execAsync(`/usr/sbin/screencapture -x -t jpg "${filePath}"`);
+      if (fs.existsSync(filePath) && fs.statSync(filePath).size > 1000) {
+        if (!electronWindow.isDestroyed()) {
+          electronWindow.webContents.send("screen-snap-saved", { fileName, timestamp: Date.now() });
+        }
+        return filePath;
+      }
+    }
+
+    // 2. Fallback to capturePage
     const image = await electronWindow.webContents.capturePage();
     const buffer = image.toJPEG(80);
-    const fileName = `${Date.now()}-screen.jpg`;
-    const dir = getScreenSnapDir();
-    const filePath = path.join(dir, fileName);
     fs.writeFileSync(filePath, buffer);
     if (!electronWindow.isDestroyed()) {
       electronWindow.webContents.send("screen-snap-saved", { fileName, timestamp: Date.now() });
     }
     return filePath;
   } catch (err) {
-    console.error("[VEYRA] Screen capture failed:", err.message);
-    return null;
+    console.error("[VEYRA] Screen capture error:", err.message);
+    try {
+      const fallback = await electronWindow.webContents.capturePage();
+      fs.writeFileSync(filePath, fallback.toJPEG(80));
+      return filePath;
+    } catch {
+      return null;
+    }
   }
 }
 
-// ─── IPC Handlers ─────────────────────────────────────────────────────────────
+// ─── IPC Handlers & State ────────────────────────────────────────────────────
 let isExamLockdown = false;
+let splitScreenInterval = null;
+let appMonitorInterval = null;
+
+// ─── Display & Split Screen Integrity Enforcement ─────────────────────────────
+function checkAndEnforceDisplayIntegrity() {
+  if (!isExamLockdown || !electronWindow || electronWindow.isDestroyed()) return;
+
+  const display = screen.getPrimaryDisplay();
+  const bounds = electronWindow.getBounds();
+  const isKiosk = electronWindow.isKiosk();
+  const isFullScreen = electronWindow.isFullScreen();
+
+  // Detect if window is resized, tiled, or put into split screen
+  const isTiledOrSplit =
+    bounds.width < display.bounds.width * 0.96 ||
+    bounds.height < display.bounds.height * 0.92 ||
+    (!isKiosk && !isFullScreen);
+
+  if (isTiledOrSplit) {
+    console.warn(
+      `[VEYRA PROCTOR] Split screen/tiling violation! Bounds: ${bounds.width}x${bounds.height}, Display: ${display.bounds.width}x${display.bounds.height}`
+    );
+
+    // Instantly notify renderer to log a violation flag and show warning modal
+    electronWindow.webContents.send("proctor-violation", {
+      type: "SPLIT_SCREEN_DETECTED",
+      message: "Split screen, tiling, or window resizing detected. The examination window must occupy the entire display.",
+      details: {
+        windowBounds: `${bounds.width}x${bounds.height}`,
+        displayBounds: `${display.bounds.width}x${display.bounds.height}`,
+      },
+    });
+
+    // Re-enforce full screen and kiosk immediately
+    try {
+      electronWindow.setBounds(display.bounds);
+      electronWindow.setFullScreen(true);
+      electronWindow.setKiosk(true);
+      electronWindow.setAlwaysOnTop(true, "screen-saver");
+      electronWindow.focus();
+    } catch (err) {
+      console.warn("[VEYRA] Re-enforcing kiosk bounds:", err.message);
+    }
+  }
+}
 
 // ─── Proctoring Lockdown & Anti-Cheat Handlers ────────────────────────────────
 function enableWindowProtection() {
@@ -225,8 +363,11 @@ function enableWindowProtection() {
 
   isExamLockdown = true;
 
-  // 1. Enable Kiosk mode (Disables Mac 3-finger swipe, Spaces, Dock, Menu Bar)
+  // 1. Force Kiosk mode & Fullscreen over entire primary display
+  const display = screen.getPrimaryDisplay();
   try {
+    electronWindow.setBounds(display.bounds);
+    electronWindow.setFullScreen(true);
     electronWindow.setKiosk(true);
     electronWindow.setAlwaysOnTop(true, "screen-saver");
     electronWindow.setFullScreenable(false);
@@ -237,14 +378,59 @@ function enableWindowProtection() {
   // 2. Disable Right-click context menu
   electronWindow.webContents.on("context-menu", preventContextMenu);
 
-  // 3. Intercept & Block Cheat Shortcuts (Copy/Paste, App Switch, Close, DevTools)
+  // 3. Intercept & Block Cheat Shortcuts
   electronWindow.webContents.on("before-input-event", handleLockdownKeyInput);
+
+  // 4. Split Screen & Window Resize listeners
+  electronWindow.on("resize", checkAndEnforceDisplayIntegrity);
+  electronWindow.on("move", checkAndEnforceDisplayIntegrity);
+  electronWindow.on("leave-full-screen", checkAndEnforceDisplayIntegrity);
+  electronWindow.on("leave-kiosk", checkAndEnforceDisplayIntegrity);
+
+  // 5. Active background display integrity monitor (every 2s)
+  if (splitScreenInterval) clearInterval(splitScreenInterval);
+  splitScreenInterval = setInterval(checkAndEnforceDisplayIntegrity, 2000);
+
+  // 6. Active background application monitor (checks for newly opened cheating apps every 3.5s)
+  if (appMonitorInterval) clearInterval(appMonitorInterval);
+  appMonitorInterval = setInterval(async () => {
+    if (!isExamLockdown || !electronWindow || electronWindow.isDestroyed()) return;
+    const running = await getRunningProhibitedApps();
+    if (running.length > 0) {
+      electronWindow.webContents.send("proctor-violation", {
+        type: "PROHIBITED_APP_ACTIVE",
+        message: `Prohibited background application active: ${running.join(", ")}. External applications are forbidden during examination.`,
+        details: { detectedApps: running },
+      });
+      try {
+        electronWindow.setAlwaysOnTop(true, "screen-saver");
+        electronWindow.focus();
+      } catch {
+        // ignore
+      }
+    }
+  }, 3500);
 }
 
 function disableWindowProtection() {
   if (!electronWindow || electronWindow.isDestroyed()) return;
 
   isExamLockdown = false;
+
+  if (splitScreenInterval) {
+    clearInterval(splitScreenInterval);
+    splitScreenInterval = null;
+  }
+
+  if (appMonitorInterval) {
+    clearInterval(appMonitorInterval);
+    appMonitorInterval = null;
+  }
+
+  electronWindow.removeListener("resize", checkAndEnforceDisplayIntegrity);
+  electronWindow.removeListener("move", checkAndEnforceDisplayIntegrity);
+  electronWindow.removeListener("leave-full-screen", checkAndEnforceDisplayIntegrity);
+  electronWindow.removeListener("leave-kiosk", checkAndEnforceDisplayIntegrity);
 
   try {
     electronWindow.setKiosk(false);
@@ -363,6 +549,15 @@ ipcMain.handle("enter-exam-lockdown", () => {
 ipcMain.handle("exit-exam-lockdown", () => {
   disableWindowProtection();
   return { locked: false };
+});
+
+// Prohibited apps management
+ipcMain.handle("get-running-prohibited-apps", async () => {
+  return await getRunningProhibitedApps();
+});
+
+ipcMain.handle("close-prohibited-apps", async () => {
+  return await closeProhibitedApps();
 });
 
 // Open snapshot folders in Finder/Explorer
