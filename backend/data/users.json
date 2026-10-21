@@ -38,5 +38,13 @@
     "passwordHash": "$2b$12$8c6jzQVHrgpsCNcSMisuWOs8C9PBqG4RZuHTfhh/ggJI17IAnKose",
     "createdAt": "2026-10-21T09:18:14.259Z",
     "role": "candidate"
+  },
+  {
+    "userId": "user-1792575241290-2igbq",
+    "name": "Test Candidate",
+    "email": "test.candidate.1792575241062@veyra.io",
+    "passwordHash": "$2b$12$HD4Hx4tkOBqKGhhiF/6O3OfO4afkdlMjEHYYRig8NuwJ79RrZWG/6",
+    "createdAt": "2026-10-21T09:34:01.290Z",
+    "role": "candidate"
   }
 ]

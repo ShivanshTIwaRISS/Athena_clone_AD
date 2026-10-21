@@ -1311,5 +1311,174 @@
         "answeredAt": "2026-10-21T09:18:14.019Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792574474075",
+    "userId": "user-1792571989014-k4iod",
+    "name": "Shivansh",
+    "startedAt": "2026-10-21T09:21:14.075Z",
+    "submittedAt": "2026-10-21T09:21:51.437Z",
+    "status": "submitted",
+    "attempted": 4,
+    "correct": 2,
+    "wrong": 2,
+    "flagCount": 12,
+    "flags": [
+      {
+        "flagId": "flag-1792574475631",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:15.631Z"
+      },
+      {
+        "flagId": "flag-1792574478618",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:18.618Z"
+      },
+      {
+        "flagId": "flag-1792574481622",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:21.622Z"
+      },
+      {
+        "flagId": "flag-1792574484620",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:24.620Z"
+      },
+      {
+        "flagId": "flag-1792574487628",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:27.628Z"
+      },
+      {
+        "flagId": "flag-1792574490627",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:21:30.627Z"
+      },
+      {
+        "flagId": "flag-1792574493629",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 3
+        },
+        "timestamp": "2026-10-21T09:21:33.629Z"
+      },
+      {
+        "flagId": "flag-1792574496627",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:21:36.627Z"
+      },
+      {
+        "flagId": "flag-1792574499626",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:21:39.626Z"
+      },
+      {
+        "flagId": "flag-1792574502636",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:21:42.636Z"
+      },
+      {
+        "flagId": "flag-1792574505632",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 5
+        },
+        "timestamp": "2026-10-21T09:21:45.632Z"
+      },
+      {
+        "flagId": "flag-1792574508632",
+        "type": "SPLIT_SCREEN_DETECTED",
+        "reason": "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        "details": {
+          "questionIndex": 5
+        },
+        "timestamp": "2026-10-21T09:21:48.632Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T09:21:26.171Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T09:21:31.870Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T09:21:33.641Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T09:21:44.908Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792575241050",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-21T09:34:01.050Z",
+    "submittedAt": "2026-10-21T09:34:01.057Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-21T09:34:01.053Z"
+      }
+    ]
   }
 ]

@@ -181,10 +181,23 @@ export default function App() {
     setFullScreen(true);
   };
 
-  // Sync fullscreen state with browser events
+  // Auto-detect fullscreen in Electron or web on setup stage
+  useEffect(() => {
+    if (window.veyra?.isFullScreen) {
+      window.veyra.isFullScreen().then((isFs) => {
+        if (isFs) setFullScreen(true);
+      }).catch(() => {});
+    } else if (document.fullscreenElement) {
+      setFullScreen(true);
+    }
+  }, [stage]);
+
+  // Sync fullscreen state with browser events (in browser environments)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setFullScreen(Boolean(document.fullscreenElement));
+      if (!window.veyra) {
+        setFullScreen(Boolean(document.fullscreenElement));
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);

@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('veyra', {
   enterExamLockdown: () => ipcRenderer.invoke('enter-exam-lockdown'),
   exitExamLockdown: () => ipcRenderer.invoke('exit-exam-lockdown'),
   enableFullScreen: () => ipcRenderer.invoke('enable-fullscreen'),
+  isFullScreen: () => ipcRenderer.invoke('is-fullscreen'),
   getRunningProhibitedApps: () => ipcRenderer.invoke('get-running-prohibited-apps'),
   closeProhibitedApps: () => ipcRenderer.invoke('close-prohibited-apps'),
   registerProctorViolationListener: (callback) => {

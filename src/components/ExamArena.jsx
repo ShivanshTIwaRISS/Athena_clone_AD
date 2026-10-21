@@ -332,34 +332,75 @@ export default function ExamArena({
     }
   }, [timer, submitting, sessionId, handleSubmit]);
 
+  // Auto-dismiss proctoring violation toast after 4.5 seconds
+  useEffect(() => {
+    if (activeViolation) {
+      const dismissTimer = setTimeout(() => {
+        setActiveViolation(null);
+      }, 4500);
+      return () => clearTimeout(dismissTimer);
+    }
+  }, [activeViolation]);
+
   return (
     <div className="exam-arena-container">
+      {/* ── Real-time Proctoring Toast Notification Popup */}
+      {activeViolation && (
+        <div
+          className="proctor-toast-popup animate-slide-down"
+          role="alert"
+          style={{
+            position: 'fixed',
+            top: 20,
+            right: 24,
+            zIndex: 99999,
+            maxWidth: 440,
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderLeft: '4px solid var(--brand-amber)',
+            borderRadius: 'var(--r-md)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 12,
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{ color: 'var(--brand-amber)', marginTop: 2, flexShrink: 0 }}
+          >
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+              Proctoring Flag #{flags.length} Logged ({activeViolation.timestamp})
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.4 }}>
+              {activeViolation.message}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            style={{ fontSize: 11, padding: '3px 8px', minHeight: 'unset', height: 26 }}
+            onClick={() => setActiveViolation(null)}
+            title="Dismiss notification"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* ── Main question area */}
       <div className="exam-main-area">
-        {/* Real-time Proctoring Violation Banner */}
-        {activeViolation && (
-          <div className="alert alert-warning animate-slide-up" style={{ borderLeft: '4px solid var(--brand-yellow)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--brand-yellow-dim)', marginTop: 2, flexShrink: 0 }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 13 }}>
-                Proctoring Flag #{flags.length} Logged ({activeViolation.timestamp})
-              </div>
-              <div style={{ fontSize: 12.5, marginTop: 2 }}>{activeViolation.message}</div>
-            </div>
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              style={{ fontSize: 11, padding: '4px 10px' }}
-              onClick={() => setActiveViolation(null)}
-            >
-              Acknowledge
-            </button>
-          </div>
-        )}
 
         {/* Error */}
         {errorMsg && (
@@ -604,15 +645,7 @@ export default function ExamArena({
               <span className="proctor-stat-value">{formatTime(timer)}</span>
             </div>
             <div className="proctor-stat-row">
-              <span className="proctor-stat-label">Webcam photos</span>
-              <span className="proctor-stat-value">{snapshotCount} saved</span>
-            </div>
-            <div className="proctor-stat-row">
-              <span className="proctor-stat-label">Screen captures</span>
-              <span className="proctor-stat-value">{screenSnapshotCount} saved</span>
-            </div>
-            <div className="proctor-stat-row">
-              <span className="proctor-stat-label">Proctoring flags</span>
+              <span className="proctor-stat-label">Proctoring status</span>
               <span className={`proctor-stat-value ${flags.length > 0 ? 'text-amber' : 'text-green'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 {flags.length === 0 ? (
                   <>

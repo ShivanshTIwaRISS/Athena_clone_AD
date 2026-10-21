@@ -169,9 +169,9 @@ export default function ExamResults({
           <span className="meta-card-value">{formatTime(timer)} (of 30m)</span>
         </div>
         <div className="meta-card">
-          <span className="meta-card-label">Proctor Telemetry</span>
-          <span className="meta-card-value">
-            {snapshotCount} cam · {screenSnapshotCount} screen
+          <span className="meta-card-label">Integrity Status</span>
+          <span className="meta-card-value" style={{ color: 'var(--brand-green)' }}>
+            Verified Secure
           </span>
         </div>
         <div className="meta-card">

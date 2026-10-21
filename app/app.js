@@ -364,6 +364,8 @@ async function captureAndSaveScreen() {
 let isExamLockdown = false;
 let splitScreenInterval = null;
 let appMonitorInterval = null;
+let lastSplitScreenViolationTime = 0;
+let lastAppViolationTime = 0;
 
 // ─── Display & Split Screen Integrity Enforcement ─────────────────────────────
 function checkAndEnforceDisplayIntegrity() {
@@ -371,30 +373,33 @@ function checkAndEnforceDisplayIntegrity() {
 
   const display = screen.getPrimaryDisplay();
   const bounds = electronWindow.getBounds();
-  const isKiosk = electronWindow.isKiosk();
 
-  // Detect if window is resized, tiled, or put into split screen
+  // True split screen or window tiling: window width or height is significantly reduced (<75%)
+  // or window is minimized / shifted off-screen
   const isTiledOrSplit =
-    bounds.width < display.bounds.width * 0.98 ||
-    bounds.height < display.bounds.height * 0.98 ||
-    !isKiosk;
+    bounds.width < display.bounds.width * 0.75 ||
+    bounds.height < display.bounds.height * 0.70;
 
   if (isTiledOrSplit) {
-    console.warn(
-      `[VEYRA PROCTOR] Split screen/tiling violation! Bounds: ${bounds.width}x${bounds.height}, Display: ${display.bounds.width}x${display.bounds.height}`
-    );
+    const now = Date.now();
+    // Throttle so flags are never spammed continuously — at most once every 12 seconds
+    if (now - lastSplitScreenViolationTime > 12000) {
+      lastSplitScreenViolationTime = now;
+      console.warn(
+        `[VEYRA PROCTOR] Split screen/tiling violation! Bounds: ${bounds.width}x${bounds.height}, Display: ${display.bounds.width}x${display.bounds.height}`
+      );
 
-    // Instantly notify renderer to log a violation flag and show warning modal
-    electronWindow.webContents.send("proctor-violation", {
-      type: "SPLIT_SCREEN_DETECTED",
-      message: "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
-      details: {
-        windowBounds: `${bounds.width}x${bounds.height}`,
-        displayBounds: `${display.bounds.width}x${display.bounds.height}`,
-      },
-    });
+      electronWindow.webContents.send("proctor-violation", {
+        type: "SPLIT_SCREEN_DETECTED",
+        message: "Split-screen or window resizing detected. The examination window must occupy the entire display in kiosk mode.",
+        details: {
+          windowBounds: `${bounds.width}x${bounds.height}`,
+          displayBounds: `${display.bounds.width}x${display.bounds.height}`,
+        },
+      });
+    }
 
-    // Re-enforce kiosk bounds without native Spaces
+    // Re-enforce kiosk bounds
     try {
       electronWindow.setFullScreenable(false);
       electronWindow.setBounds(display.bounds);
@@ -407,14 +412,17 @@ function checkAndEnforceDisplayIntegrity() {
     }
   }
 
-  // Multi-display check
+  // Multi-display check (throttled)
   const displays = screen.getAllDisplays();
   if (displays.length > 1) {
-    electronWindow.webContents.send("proctor-violation", {
-      type: "MULTIPLE_DISPLAYS_DETECTED",
-      message: `Multiple displays detected (${displays.length}). External monitors are prohibited during the examination.`,
-      details: { displayCount: displays.length },
-    });
+    const now = Date.now();
+    if (now - lastSplitScreenViolationTime > 12000) {
+      electronWindow.webContents.send("proctor-violation", {
+        type: "MULTIPLE_DISPLAYS_DETECTED",
+        message: `Multiple displays detected (${displays.length}). External monitors are prohibited during the examination.`,
+        details: { displayCount: displays.length },
+      });
+    }
   }
 }
 
@@ -495,11 +503,15 @@ function enableWindowProtection() {
     if (!isExamLockdown || !electronWindow || electronWindow.isDestroyed()) return;
     const running = await getRunningProhibitedApps();
     if (running.length > 0) {
-      electronWindow.webContents.send("proctor-violation", {
-        type: "PROHIBITED_APP_ACTIVE",
-        message: `Prohibited background application active: ${running.join(", ")}. External applications are forbidden during examination.`,
-        details: { detectedApps: running },
-      });
+      const now = Date.now();
+      if (now - lastAppViolationTime > 12000) {
+        lastAppViolationTime = now;
+        electronWindow.webContents.send("proctor-violation", {
+          type: "PROHIBITED_APP_ACTIVE",
+          message: `Prohibited background application active: ${running.join(", ")}. External applications are forbidden during examination.`,
+          details: { detectedApps: running },
+        });
+      }
       try {
         electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
         electronWindow.focus();
@@ -725,12 +737,17 @@ ipcMain.handle("close-prohibited-apps", async () => {
 ipcMain.handle("enable-fullscreen", () => {
   if (electronWindow && !electronWindow.isDestroyed()) {
     const display = screen.getPrimaryDisplay();
-    electronWindow.setFullScreenable(false);
     electronWindow.setBounds(display.bounds);
-    electronWindow.setKiosk(true);
     return { success: true };
   }
   return { success: false };
+});
+
+ipcMain.handle("is-fullscreen", () => {
+  if (!electronWindow || electronWindow.isDestroyed()) return false;
+  const bounds = electronWindow.getBounds();
+  const display = screen.getPrimaryDisplay();
+  return bounds.width >= display.bounds.width * 0.88 && bounds.height >= display.bounds.height * 0.80;
 });
 
 // Open snapshot folders in Finder/Explorer
