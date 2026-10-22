@@ -6,9 +6,35 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const fs   = require('fs');
+const os   = require('os');
 
 const TEST_PORT = 3199;
 const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
+
+// ── Isolated temp data directory so tests NEVER write to production data ─────
+const REAL_DATA_DIR = path.join(__dirname, '..', 'data');
+let TEST_DATA_DIR = null;
+
+function setupTestDataDir() {
+  TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'veyra-test-'));
+  // Copy questions.json so the server can serve questions during tests
+  fs.copyFileSync(
+    path.join(REAL_DATA_DIR, 'questions.json'),
+    path.join(TEST_DATA_DIR, 'questions.json')
+  );
+  // Seed empty sessions and users
+  fs.writeFileSync(path.join(TEST_DATA_DIR, 'sessions.json'), '[]');
+  fs.writeFileSync(path.join(TEST_DATA_DIR, 'users.json'), '[]');
+}
+
+function teardownTestDataDir() {
+  if (TEST_DATA_DIR) {
+    try { fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true }); } catch { /* ignore */ }
+    TEST_DATA_DIR = null;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 let serverProcess = null;
 let testSessionId = null;
@@ -256,11 +282,13 @@ async function runTests() {
 }
 
 async function main() {
+  setupTestDataDir();
   const serverPath = path.join(__dirname, '..', 'server.js');
   console.log(`[TEST RUNNER] Spawning backend server on port ${TEST_PORT}...`);
+  console.log(`[TEST RUNNER] Using isolated temp data dir: ${TEST_DATA_DIR}`);
 
   serverProcess = spawn('node', [serverPath], {
-    env: { ...process.env, PORT: String(TEST_PORT) },
+    env: { ...process.env, PORT: String(TEST_PORT), DATA_DIR: TEST_DATA_DIR },
     stdio: 'inherit',
   });
 
@@ -275,6 +303,7 @@ async function main() {
     if (serverProcess) {
       serverProcess.kill('SIGTERM');
     }
+    teardownTestDataDir();
   }
 }
 

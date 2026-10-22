@@ -29,9 +29,15 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // ── File helpers ──────────────────────────────────────────────────────────────
-const questionsPath = path.join(__dirname, "data", "questions.json");
-const sessionsPath  = path.join(__dirname, "data", "sessions.json");
-const usersPath     = path.join(__dirname, "data", "users.json");
+// DATA_DIR lets the test runner point at a temp directory so it never
+// pollutes the real data files (defaults to the standard data/ folder).
+const DATA_DIR      = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(__dirname, "data");
+
+const questionsPath = path.join(DATA_DIR,       "questions.json");
+const sessionsPath  = path.join(DATA_DIR,        "sessions.json");
+const usersPath     = path.join(DATA_DIR,        "users.json");
 
 function readQuestions() {
   try {

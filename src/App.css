@@ -43,8 +43,8 @@
 /* Width limiter for non-exam pages */
 .app-main-content > .history-container,
 .app-main-content > .results-container,
-.app-main-content > .available-exams-wrapper,
-.app-main-content > div {
+.app-main-content > .available-exams-container,
+.app-main-content > div:not(.exam-arena-container) {
   max-width: 1280px;
   width: 100%;
   margin: 0 auto;
