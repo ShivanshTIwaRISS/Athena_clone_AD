@@ -135,7 +135,7 @@ function createWindow(port = 3000) {
     minWidth: 1100,
     minHeight: 700,
     title: "VEYRA – Smart Assessments. Seamless Execution.",
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#0a0a0f",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     fullscreenable: false,
     webPreferences: {
@@ -403,6 +403,9 @@ function checkAndEnforceDisplayIntegrity() {
     try {
       electronWindow.setFullScreenable(false);
       electronWindow.setBounds(display.bounds);
+      if (process.platform === "darwin" && !electronWindow.isSimpleFullScreen()) {
+        electronWindow.setSimpleFullScreen(true);
+      }
       electronWindow.setKiosk(true);
       electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
       electronWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -456,10 +459,16 @@ function enableWindowProtection() {
   isExamLockdown = true;
 
   // 1. Force Kiosk mode over entire primary display WITHOUT creating a macOS Space
+  //    On macOS, setSimpleFullScreen(true) is pre-Lion fullscreen: covers the menu bar
+  //    and title bar completely without entering a separate Space, preventing 3-finger swipe.
   const display = screen.getPrimaryDisplay();
   try {
     electronWindow.setFullScreenable(false);
     electronWindow.setBounds(display.bounds);
+    if (process.platform === "darwin") {
+      // Simple fullscreen covers the macOS menu bar and title bar fully
+      electronWindow.setSimpleFullScreen(true);
+    }
     electronWindow.setKiosk(true);
     electronWindow.setAlwaysOnTop(true, "screen-saver", 1);
     electronWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -545,6 +554,9 @@ function disableWindowProtection() {
 
   try {
     electronWindow.setKiosk(false);
+    if (process.platform === "darwin") {
+      electronWindow.setSimpleFullScreen(false);
+    }
     electronWindow.setVisibleOnAllWorkspaces(false);
     electronWindow.setAlwaysOnTop(false);
     electronWindow.setFullScreenable(true);
@@ -738,6 +750,10 @@ ipcMain.handle("enable-fullscreen", () => {
   if (electronWindow && !electronWindow.isDestroyed()) {
     const display = screen.getPrimaryDisplay();
     electronWindow.setBounds(display.bounds);
+    if (process.platform === "darwin") {
+      // setSimpleFullScreen covers the macOS menu bar and titlebar without creating a Space
+      try { electronWindow.setSimpleFullScreen(true); } catch { /* ignore */ }
+    }
     return { success: true };
   }
   return { success: false };
@@ -745,6 +761,9 @@ ipcMain.handle("enable-fullscreen", () => {
 
 ipcMain.handle("is-fullscreen", () => {
   if (!electronWindow || electronWindow.isDestroyed()) return false;
+  if (process.platform === "darwin") {
+    return electronWindow.isSimpleFullScreen() || electronWindow.isKiosk();
+  }
   const bounds = electronWindow.getBounds();
   const display = screen.getPrimaryDisplay();
   return bounds.width >= display.bounds.width * 0.88 && bounds.height >= display.bounds.height * 0.80;
