@@ -253,6 +253,8 @@ app.post("/exam/start", (req, res) => {
 
   const sessions = readSessions();
 
+  const questions = readQuestions();
+
   const session = {
     sessionId: makeSessionId(),
     userId,
@@ -263,6 +265,7 @@ app.post("/exam/start", (req, res) => {
     attempted: 0,
     correct: 0,
     wrong: 0,
+    totalQuestions: questions.length,
     flagCount: 0,
     flags: [],
     answers: [],

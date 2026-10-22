@@ -585,6 +585,7 @@ export default function App() {
             snapshotCount={snapshotCount}
             screenSnapshotCount={screenSnapshotCount}
             onRestart={handleRestartFlow}
+            onBack={() => setStage('HISTORY')}
             onViewHistory={() => setStage('HISTORY')}
           />
         )}

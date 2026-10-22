@@ -16,7 +16,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T07:40:31.347Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792309528596",
@@ -35,7 +36,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T07:45:28.600Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792309968069",
@@ -54,7 +56,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T07:52:48.072Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792310524064",
@@ -73,7 +76,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T08:02:04.068Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792310673497",
@@ -170,7 +174,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T08:05:13.627Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792313415207",
@@ -189,7 +194,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T08:50:15.209Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792317044761",
@@ -232,7 +238,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T09:50:55.966Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792318117120",
@@ -251,7 +258,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T10:08:37.124Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792318169685",
@@ -288,7 +296,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T10:09:44.946Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792318458911",
@@ -307,7 +316,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T10:14:18.914Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792318514925",
@@ -350,7 +360,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T10:15:28.989Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792320349082",
@@ -371,7 +382,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T10:45:49.085Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792321314509",
@@ -434,7 +446,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:02:14.104Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792321425033",
@@ -473,7 +486,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:04:11.028Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792321538226",
@@ -573,7 +587,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:06:06.632Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792321760175",
@@ -594,7 +609,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:09:20.178Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792321795914",
@@ -652,7 +668,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T11:10:06.070Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792322898858",
@@ -673,7 +690,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:28:18.861Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792322923578",
@@ -694,7 +712,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:28:43.581Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323187022",
@@ -715,7 +734,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T11:33:10.458Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323211960",
@@ -736,7 +756,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:33:33.950Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323415894",
@@ -757,7 +778,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:36:55.898Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323463618",
@@ -778,7 +800,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:37:43.621Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323574894",
@@ -859,7 +882,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T11:40:07.862Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792323677169",
@@ -892,7 +916,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:41:31.589Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792324375724",
@@ -913,7 +938,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-18T11:52:55.728Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792324579545",
@@ -1012,7 +1038,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T11:56:55.752Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792324690577",
@@ -1033,7 +1060,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-18T11:58:14.114Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792399624517",
@@ -1054,7 +1082,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-19T08:47:04.520Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792399649494",
@@ -1075,7 +1104,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-19T08:47:29.497Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792399817115",
@@ -1096,7 +1126,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-19T08:50:17.117Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792399860256",
@@ -1117,7 +1148,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-19T08:51:00.259Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792571641917",
@@ -1166,7 +1198,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-21T08:34:04.235Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792571715715",
@@ -1223,7 +1256,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-21T08:35:30.747Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792572011231",
@@ -1268,7 +1302,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-21T08:40:33.509Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792573357761",
@@ -1289,7 +1324,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-21T09:02:37.764Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792574294016",
@@ -1310,7 +1346,8 @@
         "isCorrect": true,
         "answeredAt": "2026-10-21T09:18:14.019Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792574474075",
@@ -1458,7 +1495,8 @@
         "isCorrect": false,
         "answeredAt": "2026-10-21T09:21:44.908Z"
       }
-    ]
+    ],
+    "totalQuestions": 14
   },
   {
     "sessionId": "session-1792575241050",
@@ -1479,6 +1517,318 @@
         "isCorrect": true,
         "answeredAt": "2026-10-21T09:34:01.053Z"
       }
+    ],
+    "totalQuestions": 14
+  },
+  {
+    "sessionId": "session-1792575669716",
+    "userId": "user-1792571989014-k4iod",
+    "name": "Shivansh",
+    "startedAt": "2026-10-21T09:41:09.716Z",
+    "submittedAt": null,
+    "status": "in-progress",
+    "attempted": 2,
+    "correct": 0,
+    "wrong": 2,
+    "flagCount": 4,
+    "flags": [
+      {
+        "flagId": "flag-1792575685573",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-21T09:41:25.573Z"
+      },
+      {
+        "flagId": "flag-1792575720139",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:42:00.139Z"
+      },
+      {
+        "flagId": "flag-1792575784368",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:43:04.368Z"
+      },
+      {
+        "flagId": "flag-1792575793584",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-21T09:43:13.584Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 2,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T09:41:35.493Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-21T09:41:36.873Z"
+      }
+    ],
+    "totalQuestions": 14
+  },
+  {
+    "sessionId": "session-1792678318067",
+    "userId": "student-test-01",
+    "name": "Aditya Test Candidate",
+    "startedAt": "2026-10-22T14:11:58.067Z",
+    "submittedAt": "2026-10-22T14:11:58.073Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "flagCount": 0,
+    "flags": [],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T14:11:58.070Z"
+      }
+    ],
+    "totalQuestions": 14
+  },
+  {
+    "sessionId": "session-1792678580557",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T14:16:20.557Z",
+    "submittedAt": "2026-10-22T14:17:01.417Z",
+    "status": "submitted",
+    "attempted": 3,
+    "correct": 0,
+    "wrong": 3,
+    "flagCount": 2,
+    "flags": [
+      {
+        "flagId": "flag-1792678595913",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T14:16:35.913Z"
+      },
+      {
+        "flagId": "flag-1792678621478",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T14:17:01.478Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:16:53.516Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:16:56.218Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:16:59.125Z"
+      }
+    ],
+    "totalQuestions": 14
+  },
+  {
+    "sessionId": "session-1792679959222",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T14:39:19.222Z",
+    "submittedAt": "2026-10-22T14:39:59.700Z",
+    "status": "submitted",
+    "attempted": 4,
+    "correct": 1,
+    "wrong": 3,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792679999761",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 6
+        },
+        "timestamp": "2026-10-22T14:39:59.761Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 3,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:39:45.647Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T14:39:47.521Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:39:48.971Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:39:51.325Z"
+      }
     ]
+  },
+  {
+    "sessionId": "session-1792680605961",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T14:50:05.962Z",
+    "submittedAt": "2026-10-22T14:50:31.470Z",
+    "status": "submitted",
+    "attempted": 6,
+    "correct": 0,
+    "wrong": 6,
+    "totalQuestions": 14,
+    "flagCount": 2,
+    "flags": [
+      {
+        "flagId": "flag-1792680607291",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T14:50:07.291Z"
+      },
+      {
+        "flagId": "flag-1792680631527",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 7
+        },
+        "timestamp": "2026-10-22T14:50:31.527Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:16.399Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:20.293Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:22.250Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:24.028Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:26.620Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T14:50:28.362Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792680780086",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T14:53:00.086Z",
+    "submittedAt": "2026-10-22T14:53:05.698Z",
+    "status": "submitted",
+    "attempted": 0,
+    "correct": 0,
+    "wrong": 0,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792680785736",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-22T14:53:05.736Z"
+      }
+    ],
+    "answers": []
+  },
+  {
+    "sessionId": "session-1792681036185",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T14:57:16.186Z",
+    "submittedAt": "2026-10-22T14:57:22.430Z",
+    "status": "submitted",
+    "attempted": 0,
+    "correct": 0,
+    "wrong": 0,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792681042502",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T14:57:22.502Z"
+      }
+    ],
+    "answers": []
   }
 ]

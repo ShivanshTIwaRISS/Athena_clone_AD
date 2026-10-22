@@ -25,15 +25,26 @@
    APP SHELL
 ═══════════════════════════════════════════════════ */
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
+  overflow: hidden;
 }
 
 .app-main-content {
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 32px 40px;
+  box-sizing: border-box;
+}
+
+/* Width limiter for non-exam pages */
+.app-main-content > .history-container,
+.app-main-content > .results-container,
+.app-main-content > .available-exams-wrapper,
+.app-main-content > div {
   max-width: 1280px;
   width: 100%;
   margin: 0 auto;
@@ -46,8 +57,7 @@
 .app-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 20px 0 80px; /* 80px left padding clears macOS traffic light buttons */
   height: 60px;
   background: #ffffff;
   border-bottom: 1px solid var(--border);
@@ -55,11 +65,41 @@
   position: sticky;
   top: 0;
   z-index: 200;
+  gap: 0;
+  -webkit-app-region: drag; /* make the header bar draggable as a title bar */
+  user-select: none;
 }
 
-.header-left   { display: flex; align-items: center; gap: 20px; }
-.header-center { display: flex; align-items: center; }
-.header-right  { display: flex; align-items: center; gap: 10px; }
+/* Left section: brand + nav tabs — fixed width, never shrinks */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  -webkit-app-region: no-drag; /* allow clicks on buttons/logo */
+}
+
+/* Center section: timer — grows to fill space, perfectly centred */
+.header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  min-width: 0;
+  -webkit-app-region: drag; /* spacer area stays draggable */
+}
+
+/* Right section: status badges + candidate + rules — fixed, never shrinks */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  -webkit-app-region: no-drag; /* allow clicks */
+}
 
 /* Logo */
 .brand-logo {
@@ -68,6 +108,7 @@
   gap: 10px;
   text-decoration: none;
   transition: opacity var(--tx);
+  flex-shrink: 0;
 }
 .brand-logo:hover { opacity: 0.9; }
 
@@ -99,6 +140,10 @@
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 /* Stage pill */
@@ -114,6 +159,10 @@
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+  flex-shrink: 0;
 }
 
 .status-dot {
@@ -129,7 +178,7 @@
 .dot-history { background: #4f46e5; }
 
 /* Nav tabs */
-.header-nav-tabs { display: flex; align-items: center; gap: 4px; }
+.header-nav-tabs { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 
 .nav-tab-btn {
   background: transparent;
@@ -152,11 +201,13 @@
   gap: 8px;
   background: #fff;
   border: 1px solid var(--border-mid);
-  padding: 5px 12px;
+  padding: 5px 14px;
   border-radius: var(--r-sm);
   font-size: 13px;
   box-shadow: var(--shadow-sm);
   transition: all var(--tx);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .timer-label { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
 .timer-value {
@@ -191,6 +242,8 @@
   font-weight: 600;
   border: 1px solid transparent;
   transition: all var(--tx);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .backend-status-badge.online {
   background: var(--brand-green-soft);
@@ -220,6 +273,9 @@
   border: 1px solid var(--border);
   padding: 4px 10px 4px 5px;
   border-radius: var(--r-sm);
+  max-width: 200px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .candidate-avatar {
   width: 24px;
@@ -234,9 +290,9 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.candidate-meta { display: flex; flex-direction: column; line-height: 1.2; }
-.candidate-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-.candidate-id   { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+.candidate-meta  { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; overflow: hidden; }
+.candidate-name  { font-size: 12px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.candidate-id    { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 
 /* Header rules button */
 .btn-header-rules {
@@ -860,7 +916,8 @@
   grid-template-columns: 1fr 280px;
   gap: 18px;
   animation: fade-in 300ms ease;
-  height: calc(100vh - 110px);
+  /* Fill the scrollable main content area — no fixed 100vh needed */
+  min-height: calc(100vh - 140px);
 }
 
 /* Main question area */

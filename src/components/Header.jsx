@@ -32,9 +32,34 @@ export default function Header({
 }) {
   const isExam = stage === 'EXAM';
 
+  // Build the timer badge for reuse
+  const timerBadge = (() => {
+    if (!isExam) return null;
+    const elapsed = Math.floor(Number(timer) || 0);
+    const remaining = Math.max(0, EXAM_DURATION_SECONDS - elapsed);
+    const isUrgent  = remaining <= 300 && remaining > 0;
+    const isWarning = remaining <= 600 && remaining > 300;
+    const isExpired = remaining === 0;
+    return (
+      <div
+        className={`timer-badge ${isUrgent || isExpired ? 'timer-urgent' : isWarning ? 'timer-warning' : ''}`}
+        title={`Exam Duration: 30 minutes. ${remaining > 0 ? `${formatCountdown(remaining)} remaining` : 'Time expired'}`}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <span className="timer-label">Time Remaining</span>
+        <span className="timer-value">
+          {isExpired ? '00:00 (Time Up)' : formatCountdown(remaining)}
+        </span>
+      </div>
+    );
+  })();
+
   return (
     <header className="app-header">
-      {/* ── Left: Brand + Stage */}
+      {/* ── Left: Brand + Stage + Nav tabs */}
       <div className="header-left">
         <div
           className="brand-logo"
@@ -79,35 +104,14 @@ export default function Header({
         )}
       </div>
 
-      {/* ── Centre: 30-Minute Live Countdown Timer during exam */}
-      <div className="header-center">
-        {isExam && (() => {
-          const elapsed = Math.floor(Number(timer) || 0);
-          const remaining = Math.max(0, EXAM_DURATION_SECONDS - elapsed);
-          const isUrgent = remaining <= 300 && remaining > 0; // last 5 mins
-          const isWarning = remaining <= 600 && remaining > 300; // last 10 mins
-          const isExpired = remaining === 0;
+      {/* ── Spacer — pushes right section to the edge */}
+      <div className="header-center" />
 
-          return (
-            <div
-              className={`timer-badge ${isUrgent || isExpired ? 'timer-urgent' : isWarning ? 'timer-warning' : ''}`}
-              title={`Exam Duration: 30 minutes. ${remaining > 0 ? `${formatCountdown(remaining)} remaining` : 'Time expired'}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span className="timer-label">Time Remaining</span>
-              <span className="timer-value">
-                {isExpired ? '00:00 (Time Up)' : formatCountdown(remaining)}
-              </span>
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* ── Right: Status + Candidate + Rules */}
+      {/* ── Right: Timer (exam only) + Status + Candidate + Rules + Logout */}
       <div className="header-right">
+        {/* Countdown timer — always visible on the right during exam */}
+        {timerBadge}
+
         {/* Backend connectivity */}
         <div
           className={`backend-status-badge ${backendOnline ? 'online' : 'offline'}`}
@@ -170,14 +174,14 @@ export default function Header({
 }
 
 Header.propTypes = {
-  stage:        PropTypes.string.isRequired,
-  studentName:  PropTypes.string,
-  userId:       PropTypes.string,
-  userEmail:    PropTypes.string,
-  sessionId:    PropTypes.string,
-  timer:        PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  stage:         PropTypes.string.isRequired,
+  studentName:   PropTypes.string,
+  userId:        PropTypes.string,
+  userEmail:     PropTypes.string,
+  sessionId:     PropTypes.string,
+  timer:         PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   backendOnline: PropTypes.bool.isRequired,
-  onOpenRules:  PropTypes.func.isRequired,
-  onNavigate:   PropTypes.func,
-  onLogout:     PropTypes.func,
+  onOpenRules:   PropTypes.func.isRequired,
+  onNavigate:    PropTypes.func,
+  onLogout:      PropTypes.func,
 };

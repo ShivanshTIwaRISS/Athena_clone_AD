@@ -18,6 +18,7 @@ export default function ExamResults({
   snapshotCount,
   screenSnapshotCount = 0,
   onRestart,
+  onBack,
   onViewHistory,
 }) {
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'CORRECT' | 'WRONG' | 'SKIPPED'
@@ -83,6 +84,23 @@ export default function ExamResults({
 
   return (
     <div className="results-container animate-fade-in">
+      {/* ── Back navigation ───────────────────────────────────────── */}
+      {onBack && (
+        <div style={{ marginBottom: 16 }}>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={onBack}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Back to History
+          </button>
+        </div>
+      )}
+
       {/* ── 1. Top Scorecard Hero ─────────────────────────────────── */}
       <div className="results-hero">
         <div className={`result-score-ring ${passed ? 'pass' : 'fail'}`}>
@@ -397,6 +415,14 @@ export default function ExamResults({
 
       {/* ── 5. Bottom Navigation Actions ───────────────────────────── */}
       <div className="results-actions-bar">
+        {onBack && (
+          <button type="button" className="btn btn-outline btn-lg" onClick={onBack}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Back to History
+          </button>
+        )}
         <button type="button" className="btn btn-primary btn-lg" onClick={onRestart}>
           Take Another Assessment
         </button>
@@ -418,5 +444,6 @@ ExamResults.propTypes = {
   snapshotCount:       PropTypes.number.isRequired,
   screenSnapshotCount: PropTypes.number,
   onRestart:           PropTypes.func.isRequired,
+  onBack:              PropTypes.func,
   onViewHistory:       PropTypes.func,
 };

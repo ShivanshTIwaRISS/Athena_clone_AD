@@ -626,14 +626,8 @@ export default function ExamArena({
         {/* Webcam & Proctoring Telemetry */}
         <div className="sidebar-card">
           <div className="sidebar-card-title">Live Proctoring</div>
-          <div className="webcam-mini-wrap">
-            {mediaStream ? (
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            ) : (
-              <div className="webcam-mini-placeholder">Camera offline</div>
-            )}
-          </div>
-          <div className="proctor-stats" style={{ marginTop: 10 }}>
+          {/* Timer rows rendered FIRST so they are never hidden under the camera */}
+          <div className="proctor-stats" style={{ marginBottom: 10 }}>
             <div className="proctor-stat-row">
               <span className="proctor-stat-label">Time remaining</span>
               <span className={`proctor-stat-value ${remainingSeconds <= 300 ? 'text-danger font-bold' : ''}`}>
@@ -666,6 +660,14 @@ export default function ExamArena({
                 )}
               </span>
             </div>
+          </div>
+          {/* Camera feed below the timer so it never obscures the time */}
+          <div className="webcam-mini-wrap" style={{ marginTop: 10 }}>
+            {mediaStream ? (
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div className="webcam-mini-placeholder">Camera offline</div>
+            )}
           </div>
         </div>
 

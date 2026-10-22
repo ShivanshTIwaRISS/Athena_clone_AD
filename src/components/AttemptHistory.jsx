@@ -93,9 +93,9 @@ export default function AttemptHistory({ userId, onNavigate, onReviewSession }) 
       {!loading && sessions.length > 0 && (
         <div className="history-list">
           {sessions.map((s) => {
-            const attempted = s.attempted || 0;
+            const total     = s.totalQuestions || s.attempted || 0;
             const correct   = s.correct   || 0;
-            const accuracy  = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+            const accuracy  = total > 0 ? Math.round((correct / total) * 100) : 0;
             const passed    = accuracy >= 60;
             const date      = s.submittedAt
               ? new Date(s.submittedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
@@ -119,7 +119,7 @@ export default function AttemptHistory({ userId, onNavigate, onReviewSession }) 
                   <div className="history-card-meta">
                     <span>{date}</span>
                     <span className="history-meta-dot" />
-                    <span>{correct}/{attempted} correct</span>
+                    <span>{correct}/{total} correct</span>
                     <span className="history-meta-dot" />
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{s.sessionId?.slice(0, 16)}…</span>
                   </div>
