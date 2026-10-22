@@ -578,9 +578,7 @@ export default function App() {
 
             <PreExamSetup
               userId={userId}
-              setUserId={setUserId}
               name={name}
-              setName={setName}
               cameraEnabled={cameraEnabled}
               mediaStream={mediaStream}
               videoRef={videoRef}

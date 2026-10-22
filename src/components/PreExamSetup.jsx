@@ -4,9 +4,7 @@ import PropTypes from 'prop-types';
 
 export default function PreExamSetup({
   userId,
-  setUserId,
   name,
-  setName,
   cameraEnabled,
   mediaStream,
   videoRef,
@@ -142,7 +140,7 @@ export default function PreExamSetup({
       {/* ── Left panel: checks + identity form */}
       <div className="setup-main-panel">
 
-        {/* Identity form */}
+        {/* Identity — read-only, pulled from authenticated session */}
         <div className="setup-card">
           <div className="setup-card-title">
             <div className="setup-card-icon icon-blue">
@@ -155,28 +153,12 @@ export default function PreExamSetup({
           </div>
           <div className="identity-form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="field-student-id">Student ID</label>
-              <input
-                id="field-student-id"
-                className="form-input"
-                type="text"
-                placeholder="e.g. student-101"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                disabled={isStarting}
-              />
+              <label className="form-label">Student ID</label>
+              <div className="form-input form-input-readonly">{userId}</div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="field-full-name">Full Name</label>
-              <input
-                id="field-full-name"
-                className="form-input"
-                type="text"
-                placeholder="e.g. Shivansh Tiwari"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isStarting}
-              />
+              <label className="form-label">Full Name</label>
+              <div className="form-input form-input-readonly">{name}</div>
             </div>
           </div>
         </div>
@@ -338,20 +320,18 @@ export default function PreExamSetup({
 }
 
 PreExamSetup.propTypes = {
-  userId:            PropTypes.string.isRequired,
-  setUserId:         PropTypes.func.isRequired,
-  name:              PropTypes.string.isRequired,
-  setName:           PropTypes.func.isRequired,
-  cameraEnabled:     PropTypes.bool.isRequired,
-  mediaStream:       PropTypes.any,
-  videoRef:          PropTypes.shape({ current: PropTypes.any }),
-  onGetCameraAccess: PropTypes.func.isRequired,
-  fullScreen:        PropTypes.bool.isRequired,
+  userId:             PropTypes.string.isRequired,
+  name:               PropTypes.string.isRequired,
+  cameraEnabled:      PropTypes.bool.isRequired,
+  mediaStream:        PropTypes.any,
+  videoRef:           PropTypes.shape({ current: PropTypes.any }),
+  onGetCameraAccess:  PropTypes.func.isRequired,
+  fullScreen:         PropTypes.bool.isRequired,
   onEnableFullScreen: PropTypes.func.isRequired,
-  backendOnline:     PropTypes.bool.isRequired,
-  onCheckBackend:    PropTypes.func.isRequired,
-  onStartExam:       PropTypes.func.isRequired,
-  isStarting:        PropTypes.bool.isRequired,
-  errorMessage:      PropTypes.string,
-  onOpenRules:       PropTypes.func.isRequired,
+  backendOnline:      PropTypes.bool.isRequired,
+  onCheckBackend:     PropTypes.func.isRequired,
+  onStartExam:        PropTypes.func.isRequired,
+  isStarting:         PropTypes.bool.isRequired,
+  errorMessage:       PropTypes.string,
+  onOpenRules:        PropTypes.func.isRequired,
 };

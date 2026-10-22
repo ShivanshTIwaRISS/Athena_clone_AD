@@ -457,6 +457,15 @@
   border-color: var(--brand-blue);
   box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
 }
+/* Read-only identity display — same size as inputs but non-editable appearance */
+.form-input-readonly {
+  background: var(--bg-card-3);
+  border-color: var(--border);
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: default;
+  user-select: none;
+}
 
 
 /* ═══════════════════════════════════════════════════

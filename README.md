@@ -37,7 +37,7 @@
 - Instant access to candidate examination history.
 
 ### 2. Pre-Examination Hardware Verification
-- Candidate ID & Full Name validation tied directly to authenticated account.
+- Candidate identity (Student ID & Full Name) is displayed as **read-only**, pulled directly from the authenticated session — candidates cannot modify their identity after login.
 - Live camera stream initialization and hardware readiness check.
 - Mandatory fullscreen security agreement and exam policy guidelines modal.
 
@@ -95,7 +95,7 @@ Designed with a clean, modern, high-contrast palette:
 | **Authentication** | JWT + PBKDF2/SHA-256 | Candidate register/login, token-based verification |
 | **Data Storage** | Local JSON Store | `backend/data/users.json`, `questions.json`, `sessions.json` |
 | **Proctoring Data** | File System Storage | `proctoring_data/camera_snaps/` and `screen_snaps/` |
-| **Quality & Tests** | Node Test Suite + ESLint | 12 end-to-end integration tests (`npm test`) and strict linting |
+| **Quality & Tests** | Node Test Suite + ESLint | 12 end-to-end integration tests (`npm test`) using an isolated temp data dir — never touches production data |
 
 ---
 

@@ -1898,5 +1898,218 @@
         "answeredAt": "2026-10-22T17:02:45.627Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792689535527",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T17:18:55.528Z",
+    "submittedAt": null,
+    "status": "in-progress",
+    "attempted": 8,
+    "correct": 5,
+    "wrong": 3,
+    "totalQuestions": 14,
+    "flagCount": 7,
+    "flags": [
+      {
+        "flagId": "flag-1792689535790",
+        "type": "TAB_SWITCH",
+        "reason": "Exam tab was hidden or covered. All tab and application switches are flagged.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T17:18:55.790Z"
+      },
+      {
+        "flagId": "flag-1792689568105",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:28.105Z"
+      },
+      {
+        "flagId": "flag-1792689573763",
+        "type": "WINDOW_BLUR",
+        "reason": "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:33.763Z"
+      },
+      {
+        "flagId": "flag-1792689575819",
+        "type": "WINDOW_BLUR",
+        "reason": "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:35.819Z"
+      },
+      {
+        "flagId": "flag-1792689579130",
+        "type": "WINDOW_BLUR",
+        "reason": "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:39.130Z"
+      },
+      {
+        "flagId": "flag-1792689582039",
+        "type": "WINDOW_BLUR",
+        "reason": "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:42.039Z"
+      },
+      {
+        "flagId": "flag-1792689584097",
+        "type": "WINDOW_BLUR",
+        "reason": "Exam window lost focus. Switching windows or using other applications is flagged as a violation.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T17:19:44.097Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:19:00.732Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:19:03.687Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:19:05.932Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:19:07.879Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:19:09.764Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:19:11.586Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:19:14.144Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:19:15.986Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792689905741",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T17:25:05.741Z",
+    "submittedAt": "2026-10-22T17:25:19.684Z",
+    "status": "submitted",
+    "attempted": 3,
+    "correct": 1,
+    "wrong": 2,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792689919749",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 4
+        },
+        "timestamp": "2026-10-22T17:25:19.749Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:25:09.134Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:25:13.836Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:25:16.216Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792690371778",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T17:32:51.779Z",
+    "submittedAt": "2026-10-22T17:33:00.289Z",
+    "status": "submitted",
+    "attempted": 1,
+    "correct": 1,
+    "wrong": 0,
+    "totalQuestions": 14,
+    "flagCount": 2,
+    "flags": [
+      {
+        "flagId": "flag-1792690375343",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T17:32:55.343Z"
+      },
+      {
+        "flagId": "flag-1792690380357",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T17:33:00.357Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:32:58.312Z"
+      }
+    ]
   }
 ]
