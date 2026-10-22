@@ -84,6 +84,7 @@ export default function App() {
   const webTimerIntervalRef = useRef(null);
   const webSnapshotIntervalRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const mainContentRef = useRef(null); // scroll container — reset to top on stage change
 
   /**
    * Keep video element attached to mediaStream across component mounts/unmounts
@@ -96,6 +97,17 @@ export default function App() {
       videoRef.current.play().catch(() => {});
     }
   }, [stage, mediaStream]);
+
+  /**
+   * Scroll the main content area back to the top on every stage transition.
+   * This prevents the Results page (or any other page) from appearing mid-scroll
+   * after the exam ends and the Electron window re-frames.
+   */
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [stage]);
 
   /**
    * Check Backend Server Connectivity (GET /) and preload question bank
@@ -505,7 +517,7 @@ export default function App() {
       )}
 
       {/* Main Content Area — only shown outside auth screen */}
-      {stage !== 'AUTH' && <main className="app-main-content">
+      {stage !== 'AUTH' && <main className="app-main-content" ref={mainContentRef}>
         {/* Stage 1: Available Examinations */}
         {stage === 'AVAILABLE_EXAMS' && (
           <AvailableExams

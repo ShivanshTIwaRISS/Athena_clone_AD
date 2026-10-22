@@ -29,7 +29,6 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-base);
-  overflow: hidden;
 }
 
 .app-main-content {
@@ -38,6 +37,8 @@
   overflow-x: hidden;
   padding: 24px 32px 40px;
   box-sizing: border-box;
+  /* Ensure scroll always starts at top when content changes */
+  scroll-behavior: auto;
 }
 
 /* Width limiter for non-exam pages */
@@ -59,14 +60,14 @@
   align-items: center;
   padding: 0 20px 0 80px; /* 80px left padding clears macOS traffic light buttons */
   height: 60px;
+  min-height: 60px;
+  flex-shrink: 0;
   background: #ffffff;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 4px rgba(15,23,42,0.04);
-  position: sticky;
-  top: 0;
   z-index: 200;
   gap: 0;
-  -webkit-app-region: drag; /* make the header bar draggable as a title bar */
+  -webkit-app-region: drag;
   user-select: none;
 }
 
