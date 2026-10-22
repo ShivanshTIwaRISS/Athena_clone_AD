@@ -1495,5 +1495,408 @@
         "answeredAt": "2026-10-22T15:04:52.657Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792685343973",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T16:09:03.973Z",
+    "submittedAt": "2026-10-22T16:09:21.271Z",
+    "status": "submitted",
+    "attempted": 8,
+    "correct": 3,
+    "wrong": 5,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792685361330",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 9
+        },
+        "timestamp": "2026-10-22T16:09:21.330Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:09:05.678Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:09:07.655Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:09:09.131Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:09:10.611Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:09:12.177Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:09:13.930Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:09:15.493Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:09:17.236Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792685762894",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T16:16:02.894Z",
+    "submittedAt": "2026-10-22T16:16:21.696Z",
+    "status": "submitted",
+    "attempted": 8,
+    "correct": 3,
+    "wrong": 5,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792685781762",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 9
+        },
+        "timestamp": "2026-10-22T16:16:21.762Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:16:06.177Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:16:08.435Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:16:10.106Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:16:11.838Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:16:13.269Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:16:15.168Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:16:17.029Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:16:18.647Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792688137313",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T16:55:37.313Z",
+    "submittedAt": "2026-10-22T16:55:57.189Z",
+    "status": "submitted",
+    "attempted": 8,
+    "correct": 4,
+    "wrong": 4,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792688157237",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 8
+        },
+        "timestamp": "2026-10-22T16:55:57.237Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:55:38.606Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:55:41.073Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:55:44.153Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 0,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:55:45.805Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:55:48.070Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:55:50.185Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:55:52.005Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:55:54.792Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792688193744",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T16:56:33.744Z",
+    "submittedAt": "2026-10-22T16:57:29.361Z",
+    "status": "submitted",
+    "attempted": 14,
+    "correct": 10,
+    "wrong": 4,
+    "totalQuestions": 14,
+    "flagCount": 1,
+    "flags": [
+      {
+        "flagId": "flag-1792688249404",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 14
+        },
+        "timestamp": "2026-10-22T16:57:29.404Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:56:56.147Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:56:57.947Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:00.541Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:57:03.926Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:06.654Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:09.400Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:11.491Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:13.671Z"
+      },
+      {
+        "questionId": 9,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:57:16.307Z"
+      },
+      {
+        "questionId": 10,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T16:57:18.509Z"
+      },
+      {
+        "questionId": 11,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:20.246Z"
+      },
+      {
+        "questionId": 12,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:22.218Z"
+      },
+      {
+        "questionId": 13,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:24.247Z"
+      },
+      {
+        "questionId": 14,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T16:57:26.669Z"
+      }
+    ]
+  },
+  {
+    "sessionId": "session-1792688499535",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T17:01:39.535Z",
+    "submittedAt": "2026-10-22T17:02:53.559Z",
+    "status": "submitted",
+    "attempted": 6,
+    "correct": 2,
+    "wrong": 4,
+    "totalQuestions": 14,
+    "flagCount": 2,
+    "flags": [
+      {
+        "flagId": "flag-1792688546471",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T17:02:26.471Z"
+      },
+      {
+        "flagId": "flag-1792688573633",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 7
+        },
+        "timestamp": "2026-10-22T17:02:53.633Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:02:36.458Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 1,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:02:39.113Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:02:41.109Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:02:42.761Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T17:02:44.356Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T17:02:45.627Z"
+      }
+    ]
   }
 ]
