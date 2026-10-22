@@ -419,18 +419,6 @@ export default function ExamArena({
           <div className="question-number-bar">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="q-num-tag">Question {currentIndex + 1} of {totalCount}</span>
-              <span className={`q-status-tag ${selectedOption !== null ? 'q-status-answered' : 'q-status-unanswered'}`}>
-                {selectedOption !== null ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}>
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    Option {selectedLetter || ''} selected
-                  </>
-                ) : (
-                  'Not answered'
-                )}
-              </span>
             </div>
 
             {/* Mark for Review Toggle Button */}
@@ -484,21 +472,7 @@ export default function ExamArena({
                 })}
               </div>
 
-              {/* Auto-save feedback */}
-              {saveStatus === 'saving' && (
-                <div className="alert alert-info" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="spinner" style={{ width: 13, height: 13 }} />
-                  <span>Saving answer…</span>
-                </div>
-              )}
-              {saveStatus === 'saved' && (
-                <div className="alert alert-success" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <span>Answer auto-saved. You can modify your selection at any time.</span>
-                </div>
-              )}
+              {/* Auto-save feedback removed for cleaner UX */}
             </>
           ) : (
             <p style={{ color: 'var(--text-muted)' }}>Select a question from the palette.</p>
@@ -563,18 +537,6 @@ export default function ExamArena({
 
       {/* ── Sidebar */}
       <div className="exam-sidebar">
-        {/* Progress */}
-        <div className="sidebar-card">
-          <div className="sidebar-card-title">Progress</div>
-          <div className="exam-progress-bar-track">
-            <div className="exam-progress-bar-fill" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="progress-counts">
-            <span>{answeredCount} answered</span>
-            <span>{progress}%</span>
-          </div>
-        </div>
-
         {/* Question palette */}
         <div className="sidebar-card">
           <div className="sidebar-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
