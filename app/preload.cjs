@@ -73,6 +73,15 @@ contextBridge.exposeInMainWorld('veyra', {
   // ── Rules Dialog ───────────────────────────────────────────────────────
   showRules: () => ipcRenderer.send('show-rules'),
 
+  // ── Window restoration after kiosk exit ────────────────────────────────
+  // Fires once after setSimpleFullScreen(false) settles so the renderer
+  // can force a scroll-to-top / re-layout.
+  registerWindowRestoredListener: (callback) => {
+    const fn = () => callback();
+    ipcRenderer.on('exam-window-restored', fn);
+    return () => ipcRenderer.removeListener('exam-window-restored', fn);
+  },
+
   // ─── Legacy aliases (backward compat with any remaining old references) ─
   startTimerOnMain: () => ipcRenderer.invoke('start-timer'),
   stopProctoringOnMain: () => ipcRenderer.invoke('stop-proctoring'),

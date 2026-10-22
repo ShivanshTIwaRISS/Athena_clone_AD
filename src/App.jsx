@@ -110,6 +110,31 @@ export default function App() {
   }, [stage]);
 
   /**
+   * Listen for the Electron "exam-window-restored" signal that fires ~80ms
+   * after setSimpleFullScreen(false) settles. At that point the macOS menu bar
+   * has reappeared and the window has been re-sized — force a scroll reset so
+   * the Results page content is never hidden behind the header.
+   */
+  useEffect(() => {
+    const bridge = window.veyra;
+    if (!bridge?.registerWindowRestoredListener) return;
+    const remove = bridge.registerWindowRestoredListener(() => {
+      // Small rAF delay to let Electron finish the animated setBounds
+      requestAnimationFrame(() => {
+        if (mainContentRef.current) {
+          mainContentRef.current.scrollTop = 0;
+        }
+        // Force the browser to recalculate layout by briefly toggling overflow
+        document.documentElement.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          document.documentElement.style.overflow = '';
+        });
+      });
+    });
+    return () => typeof remove === 'function' && remove();
+  }, []);
+
+  /**
    * Check Backend Server Connectivity (GET /) and preload question bank
    */
   const verifyBackend = useCallback(async () => {

@@ -559,6 +559,23 @@ function disableWindowProtection() {
     electronWindow.setKiosk(false);
     if (process.platform === "darwin") {
       electronWindow.setSimpleFullScreen(false);
+      // After exiting simpleFullScreen the macOS menu bar reappears and the
+      // window frame is in an undefined state. Explicitly restore to a normal
+      // windowed size so the titlebar + web content are positioned correctly.
+      setTimeout(() => {
+        if (!electronWindow || electronWindow.isDestroyed()) return;
+        const display = screen.getPrimaryDisplay();
+        const w = Math.min(1400, display.workAreaSize.width);
+        const h = Math.min(900, display.workAreaSize.height);
+        const x = Math.round((display.workArea.x + display.workAreaSize.width - w) / 2);
+        const y = Math.round((display.workArea.y + display.workAreaSize.height - h) / 2);
+        electronWindow.setBounds({ x, y, width: w, height: h }, true /* animate */);
+        electronWindow.setMinimumSize(1100, 700);
+        // Tell the renderer to scroll back to top — the layout may have shifted
+        if (!electronWindow.isDestroyed()) {
+          electronWindow.webContents.send("exam-window-restored");
+        }
+      }, 80);
     }
     electronWindow.setVisibleOnAllWorkspaces(false);
     electronWindow.setAlwaysOnTop(false);
