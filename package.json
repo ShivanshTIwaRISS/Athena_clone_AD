@@ -1,3 +1,4 @@
+
 {
   "name": "veyra",
   "productName": "VEYRA",
@@ -32,16 +33,25 @@
       "app/**/*",
       "package.json"
     ],
-    "extraResources": [
-      {
-        "from": "backend",
-        "to": "backend",
-        "filter": [
-          "**/*",
-          "!node_modules/**"
-        ]
-      }
-    ],
+    
+"extraResources": [
+  {
+    "from": "backend",
+    "to": "backend",
+    "filter": [
+      "**/*",
+      "!node_modules/**"
+    ]
+  },
+  {
+    "from": "backend/node_modules",
+    "to": "backend/node_modules",
+    "filter": [
+      "**/*"
+    ]
+  }
+]
+,
     "mac": {
       "category": "public.app-category.education",
       "target": [

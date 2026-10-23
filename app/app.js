@@ -33,17 +33,29 @@ let isShuttingDown = false;
 // ─── Path Helpers ─────────────────────────────────────────────────────────────
 const projectRoot = path.resolve(import.meta.dirname, "..");
 
+
 function getCameraSnapDir() {
-  const baseDir = path.join(projectRoot, "proctoring_data", "camera_snaps");
+  const baseDir = path.join(
+    app.getPath("userData"),
+    "proctoring_data",
+    "camera_snaps"
+  );
+
   fs.mkdirSync(baseDir, { recursive: true });
   return baseDir;
 }
 
 function getScreenSnapDir() {
-  const baseDir = path.join(projectRoot, "proctoring_data", "screen_snaps");
+  const baseDir = path.join(
+    app.getPath("userData"),
+    "proctoring_data",
+    "screen_snaps"
+  );
+
   fs.mkdirSync(baseDir, { recursive: true });
   return baseDir;
 }
+
 
 // ─── Port Availability ────────────────────────────────────────────────────────
 function testHostPort(port, host) {
@@ -70,65 +82,131 @@ async function findFreePort(preferred = 3000) {
   return preferred;
 }
 
-async function waitForBackendReady(port, retries = 25) {
+async function waitForBackendReady(port, retries = 60) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/`);
       if (res.ok) return true;
     } catch {
-      // not ready yet
+      // Backend may still be starting
     }
-    await new Promise((r) => setTimeout(r, 100));
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
+
   return false;
 }
 
 // ─── Backend Spawn ────────────────────────────────────────────────────────────
+
 async function startBackend() {
   const port = await findFreePort(3000);
   activeBackendPort = port;
+
   const backendDir = app.isPackaged
     ? path.join(process.resourcesPath, "backend")
     : path.join(import.meta.dirname, "../backend");
 
   const serverPath = path.join(backendDir, "server.js");
+
+  console.log("[VEYRA] Packaged:", app.isPackaged);
+  console.log("[VEYRA] Backend directory:", backendDir);
+  console.log("[VEYRA] Server path:", serverPath);
+  console.log("[VEYRA] Server exists:", fs.existsSync(serverPath));
+  console.log("[VEYRA] Selected port:", port);
+
+  // Verify the backend server file exists.
   if (!fs.existsSync(serverPath)) {
-    console.warn("[VEYRA] Backend server.js not found at:", serverPath);
-    return port;
-  }
+    const message = `Backend server.js not found at:\n${serverPath}`;
 
-  backendProcess = utilityProcess.fork(serverPath, [], {
-  cwd: backendDir,
-  env: {
-    ...process.env,
-    PORT: String(port),
-  },
-  stdio: "pipe",
-  serviceName: "VEYRA Backend",
-});
+    console.error("[VEYRA]", message);
 
-backendProcess.stdout?.on("data", (d) => {
-  const msg = d.toString().trim();
-  if (msg) console.log(`[VEYRA Backend] ${msg}`);
-});
-
-backendProcess.stderr?.on("data", (d) => {
-  const msg = d.toString().trim();
-  if (msg) console.error(`[VEYRA Backend ERR] ${msg}`);
-});
-
-backendProcess.on("exit", (code) => {
-  if (!isShuttingDown) {
-    console.error(
-      `[VEYRA] Backend exited unexpectedly (code ${code})`
+    dialog.showErrorBox(
+      "VEYRA Backend Not Found",
+      `${message}\n\nCheck that the backend folder is included in the DMG.`
     );
-  }
-});
 
-  const ready = await waitForBackendReady(port);
-  console.log(`[VEYRA] Backend readiness on http://127.0.0.1:${port}: ${ready ? "READY" : "FAILED"}`);
+    return null;
+  }
+
+  try {
+    // Launch backend using Electron's bundled Node.js runtime.
+    backendProcess = utilityProcess.fork(serverPath, [], {
+      cwd: backendDir,
+      env: {
+        ...process.env,
+        PORT: String(port),
+      },
+      stdio: "pipe",
+      serviceName: "VEYRA Backend",
+    });
+  } catch (err) {
+    console.error("[VEYRA] Could not launch backend:", err);
+
+    dialog.showErrorBox(
+      "VEYRA Backend Launch Failed",
+      err.message || "Could not launch the local backend."
+    );
+
+    backendProcess = null;
+    return null;
+  }
+
+  backendProcess.stdout?.on("data", (data) => {
+    const message = data.toString().trim();
+    if (message) {
+      console.log(`[VEYRA Backend] ${message}`);
+    }
+  });
+
+  backendProcess.stderr?.on("data", (data) => {
+    const message = data.toString().trim();
+    if (message) {
+      console.error(`[VEYRA Backend ERR] ${message}`);
+    }
+  });
+
+  backendProcess.on("error", (err) => {
+    console.error("[VEYRA] Backend process error:", err);
+  });
+
+  backendProcess.on("exit", (code) => {
+    if (!isShuttingDown) {
+      console.error(
+        `[VEYRA] Backend exited unexpectedly (code ${code})`
+      );
+    }
+  });
+
+  // Wait up to 15 seconds for the backend HTTP server.
+  const ready = await waitForBackendReady(port, 60);
+
+  console.log(
+    `[VEYRA] Backend readiness on http://127.0.0.1:${port}: ${
+      ready ? "READY" : "FAILED"
+    }`
+  );
+
+  if (!ready) {
+    try {
+      backendProcess?.kill();
+    } catch (err) {
+      console.error("[VEYRA] Backend cleanup error:", err);
+    }
+
+    backendProcess = null;
+
+    dialog.showErrorBox(
+      "VEYRA Backend Failed",
+      "The local backend did not become ready within 15 seconds.\n\nCheck the backend logs, required dependencies, and server port configuration."
+    );
+
+    return null;
+  }
+
   return port;
 }
+
 
 function stopBackend() {
   isShuttingDown = true;
@@ -998,10 +1076,28 @@ ipcMain.on("show-rules", () => {
 
 // ─── App Lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
-  const port = await startBackend();
+  let port = await startBackend();
+
+  if (port === null) {
+    console.error(
+      "[VEYRA] Backend is unavailable. Opening the UI for debugging."
+    );
+
+    // Keep the Electron window open, as it was previously.
+    port = activeBackendPort;
+  }
+
   getCameraSnapDir();
   getScreenSnapDir();
+
   createWindow(port);
+}).catch((err) => {
+  console.error("[VEYRA] Startup failed:", err);
+
+  dialog.showErrorBox(
+    "VEYRA Startup Error",
+    err.message || "The application could not start."
+  );
 });
 
 app.on("window-all-closed", () => {
