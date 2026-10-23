@@ -2,11 +2,20 @@
  * VEYRA Examination Platform - Electron Main Process
  * Smart Assessments. Seamless Execution.
  */
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, screen } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  shell,
+  nativeTheme,
+  screen,
+  utilityProcess,
+} from "electron";
 import { Buffer } from "node:buffer";
 import path from "path";
 import fs from "fs";
-import { spawn, exec } from "child_process";
+import { exec } from "child_process";
 import { promisify } from "util";
 import { createServer } from "net";
 
@@ -88,27 +97,33 @@ async function startBackend() {
     return port;
   }
 
-  backendProcess = spawn("node", [serverPath], {
-    cwd: backendDir,
-    env: { ...process.env, PORT: String(port) },
-    stdio: "pipe",
-  });
+  backendProcess = utilityProcess.fork(serverPath, [], {
+  cwd: backendDir,
+  env: {
+    ...process.env,
+    PORT: String(port),
+  },
+  stdio: "pipe",
+  serviceName: "VEYRA Backend",
+});
 
-  backendProcess.stdout?.on("data", (d) => {
-    const msg = d.toString().trim();
-    if (msg) console.log(`[VEYRA Backend] ${msg}`);
-  });
+backendProcess.stdout?.on("data", (d) => {
+  const msg = d.toString().trim();
+  if (msg) console.log(`[VEYRA Backend] ${msg}`);
+});
 
-  backendProcess.stderr?.on("data", (d) => {
-    const msg = d.toString().trim();
-    if (msg) console.error(`[VEYRA Backend ERR] ${msg}`);
-  });
+backendProcess.stderr?.on("data", (d) => {
+  const msg = d.toString().trim();
+  if (msg) console.error(`[VEYRA Backend ERR] ${msg}`);
+});
 
-  backendProcess.on("exit", (code) => {
-    if (!isShuttingDown) {
-      console.error(`[VEYRA] Backend exited unexpectedly (code ${code})`);
-    }
-  });
+backendProcess.on("exit", (code) => {
+  if (!isShuttingDown) {
+    console.error(
+      `[VEYRA] Backend exited unexpectedly (code ${code})`
+    );
+  }
+});
 
   const ready = await waitForBackendReady(port);
   console.log(`[VEYRA] Backend readiness on http://127.0.0.1:${port}: ${ready ? "READY" : "FAILED"}`);
@@ -117,12 +132,14 @@ async function startBackend() {
 
 function stopBackend() {
   isShuttingDown = true;
-  if (backendProcess && !backendProcess.killed) {
+
+  if (backendProcess) {
     try {
-      backendProcess.kill("SIGTERM");
+      backendProcess.kill();
     } catch {
-      // ignore
+      // Ignore shutdown errors
     }
+
     backendProcess = null;
   }
 }

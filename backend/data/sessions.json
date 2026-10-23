@@ -2111,5 +2111,94 @@
         "answeredAt": "2026-10-22T17:32:58.312Z"
       }
     ]
+  },
+  {
+    "sessionId": "session-1792694984085",
+    "userId": "student-test-01",
+    "name": "Aditya Sharma",
+    "startedAt": "2026-10-22T18:49:44.085Z",
+    "submittedAt": "2026-10-22T18:51:15.233Z",
+    "status": "submitted",
+    "attempted": 9,
+    "correct": 3,
+    "wrong": 6,
+    "totalQuestions": 14,
+    "flagCount": 2,
+    "flags": [
+      {
+        "flagId": "flag-1792694997358",
+        "type": "FORCE_QUIT_WARNING",
+        "reason": "⚠️ 1 Proctoring Violation Flag recorded: Force Quit / Exit attempted.",
+        "details": {
+          "questionIndex": 1
+        },
+        "timestamp": "2026-10-22T18:49:57.358Z"
+      },
+      {
+        "flagId": "flag-1792695075295",
+        "type": "WINDOW_BLUR",
+        "reason": "Window focus lost / application switch detected. Navigating away during exams is prohibited.",
+        "details": {
+          "questionIndex": 9
+        },
+        "timestamp": "2026-10-22T18:51:15.295Z"
+      }
+    ],
+    "answers": [
+      {
+        "questionId": 1,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:50:06.241Z"
+      },
+      {
+        "questionId": 2,
+        "selectedAnswer": 2,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:50:08.351Z"
+      },
+      {
+        "questionId": 3,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:50:09.588Z"
+      },
+      {
+        "questionId": 4,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:50:10.814Z"
+      },
+      {
+        "questionId": 5,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T18:50:11.905Z"
+      },
+      {
+        "questionId": 6,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T18:50:13.715Z"
+      },
+      {
+        "questionId": 7,
+        "selectedAnswer": 1,
+        "isCorrect": true,
+        "answeredAt": "2026-10-22T18:50:15.511Z"
+      },
+      {
+        "questionId": 8,
+        "selectedAnswer": 0,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:50:17.278Z"
+      },
+      {
+        "questionId": 9,
+        "selectedAnswer": 3,
+        "isCorrect": false,
+        "answeredAt": "2026-10-22T18:51:09.221Z"
+      }
+    ]
   }
 ]
