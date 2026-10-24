@@ -57,7 +57,9 @@
       "target": [
         "dmg"
       ],
-      "identity": null
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
     },
     "dmg": {
       "title": "VEYRA Installer",
